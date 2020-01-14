@@ -18,8 +18,10 @@ jobs:
   allow_failures:
     - julia: nightly
   exclude:
-    - arch: x86
-      os: osx
+    - os: osx
+      arch: x86
+    - os: windows
+      arch: x86
   include:
     - stage: Documentation
       julia: 1.0
