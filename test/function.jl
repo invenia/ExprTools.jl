@@ -482,10 +482,12 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
     # typical tuple.
     @testset "block expression ($(function_form(short)) anonymous function)" for short in (true, false)
         @testset "(;)" begin
+            # The `(;)` syntax was deprecated in 1.4.0-DEV.585 (ce29ec547e) but we can still
+            # test the behavior with `begin end`.
             f, expr = if short
-                @audit (;) -> nothing
+                @audit (begin end) -> nothing
             else
-                @audit function (;) nothing end
+                @audit function (begin end) nothing end
             end
             @test length(methods(f)) == 1
             @test f() === nothing
