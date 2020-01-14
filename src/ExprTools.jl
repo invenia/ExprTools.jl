@@ -1,5 +1,7 @@
 module ExprTools
 
-# Write your package code here.
+export splitdef, combinedef
+
+include("function.jl")
 
 end
