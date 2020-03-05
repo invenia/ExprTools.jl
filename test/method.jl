@@ -60,6 +60,11 @@ end
         @check_signature (x)->2x
     end
 
+    @testset "vararg" begin
+        @check_signature f18(xs...) = 2
+        @check_signature f19(xs::VarArg{Any, N} where N)
+    end
+
     @testset "kwargs" begin  # We do not support them right now
 
         #Following is broken:
