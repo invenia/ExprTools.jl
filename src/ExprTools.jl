@@ -1,7 +1,8 @@
 module ExprTools
 
-export splitdef, combinedef
+export signature, splitdef, combinedef
 
 include("function.jl")
+include("method.jl")
 
 end
