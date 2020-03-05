@@ -8,12 +8,13 @@ including:
 - `:name`: Name of the function (not present for anonymous functions)
 - `:params`: Parametric types defined on constructors
 - `:args`: Positional arguments of the function
-- `:kwargs`: Keyword arguments of the function
 - `:rtype`: Return type of the function
 - `:whereparams`: Where parameters
 
 All components listed may not be present in the returned dictionary with the exception of
 `:head` which will always be present.
+
+Note: keyword arguments are always ignored, right now.
 
 These are the same components returned by [`splitdef`](@ref) and consumed by
 [`combinedef`](@red), except for the `:body` component which will never be present.
@@ -27,11 +28,15 @@ function signature(meth::Method)
     def[:args] = get_args(meth)
     def[:whereparams] = get_whereparams(meth)
 
-    return Dict(k=>v for (k, v) in def if !isnothing(v))  # filter out nonfields.
+    return Dict(k=>v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
 
-get_slot_sym(meth::Method) = Symbol.(split(meth.slot_syms, '\0'; keepempty=false))
-
+function get_slot_sym(meth::Method)
+    # In 1.3 can do:
+    # Symbol.(split(meth.slot_syms, '\0'; keepempty=false))
+    ci = Base.uncompressed_ast(meth)
+    return ci.slotnames
+end
 function get_arg_names(meth::Method)
     slot_syms = get_slot_sym(meth)
     @assert slot_syms[1] == Symbol("#self#")

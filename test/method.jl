@@ -61,12 +61,16 @@ end
     end
 
     @testset "vararg" begin
-        @check_signature f18(xs...) = 2
-        @check_signature f19(xs::VarArg{Any, N} where N)
+        # we don't check `f18(xs...) = 2` as it lowers to the same method as below
+        # but has a different AST according to `splitdef` so we can't
+        # generate a solution that would unlower to two different AST for same method.
+        @check_signature f17(xs::Vararg{Any, N} where N) = 2
+
+        @check_signature f18(xs::Vararg{Int64, N} where N) = 2
+        @check_signature f19(x, xs::Vararg{Any, N} where N) = 2x
     end
 
     @testset "kwargs" begin  # We do not support them right now
-
         #Following is broken:
         #@check_signature f17(x; y=3x) = 2x
     end
