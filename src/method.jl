@@ -99,7 +99,6 @@ function get_whereparam(x::TypeVar)
     else
         return :($(Symbol(x.lb)) <: $(x.name) <: $(Symbol(x.ub)))
     end
-    # TODO other bounds
 end
 
 function get_whereparams(meth::Method)
