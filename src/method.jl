@@ -21,7 +21,6 @@ These are the same components returned by [`splitdef`](@ref) and required by
 """
 function signature(meth::Method)
     def = Dict{Symbol,Any}()
-    def[:head] = :function
     def[:name] = meth.name
 
 

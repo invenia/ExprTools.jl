@@ -1,6 +1,6 @@
 macro check_signature(function_def_expr)
     _target = splitdef(function_def_expr)
-    _target[:head] = :function  # always make it a :function
+    delete!(_target, :head) # never look at :head
     delete!(_target, :body) # never looking at body
     ret = quote
         fun = $(esc(function_def_expr))
