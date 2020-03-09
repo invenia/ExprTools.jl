@@ -4,19 +4,19 @@
 Finds the expression for a methods signature as broken up into its various components
 including:
 
-- `:head`: Expression head of the function definition: always `:function`
-- `:name`: Name of the function (not present for anonymous functions)
+- `:name`: Name of the function
 - `:params`: Parametric types defined on constructors
 - `:args`: Positional arguments of the function
-- `:rtype`: Return type of the function
 - `:whereparams`: Where parameters
 
-All components listed may not be present in the returned dictionary with the exception of
-`:head` which will always be present.
+All components listed above may not be present in the returned dictionary
 
-Note: keyword arguments are always ignored, right now.
+Right now the following components will never be returned:
+ - `:kwargs`: Keyword arguments of the function
+ - `:rtype`: Return type of the function
+ - `:body`: Function body
 
-These are the same components returned by [`splitdef`](@ref) and consumed by
+These are the same components returned by [`splitdef`](@ref) and required by
 [`combinedef`](@red), except for the `:body` component which will never be present.
 """
 function signature(meth::Method)
