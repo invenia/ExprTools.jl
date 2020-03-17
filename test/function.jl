@@ -780,7 +780,7 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
         end
     end
 
-    @testset "combinedef with no ``:head`" begin
+    @testset "combinedef with no `:head`" begin
         # should default to `:function`
         f, expr = @audit function f() end
 

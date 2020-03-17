@@ -1,4 +1,4 @@
-macro check_signature(function_def_expr)
+macro test_signature(function_def_expr)
     _target = splitdef(function_def_expr)
     delete!(_target, :head) # never look at :head
     delete!(_target, :body) # never looking at body

@@ -23,23 +23,22 @@ function signature(meth::Method)
     def = Dict{Symbol,Any}()
     def[:name] = meth.name
 
-
     def[:args] = get_args(meth)
     def[:whereparams] = get_whereparams(meth)
 
     return Dict(k=>v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
 
-function get_slot_sym(meth::Method)
+function slot_syms(meth::Method)
     # In 1.3 can do:
     # Symbol.(split(meth.slot_syms, '\0'; keepempty=false))
     ci = Base.uncompressed_ast(meth)
     return ci.slotnames
 end
-function get_arg_names(meth::Method)
+function argument_names(meth::Method)
     slot_syms = get_slot_sym(meth)
     @assert slot_syms[1] == Symbol("#self#")
-    arg_names = slot_syms[2:meth.nargs]  #nargs includes 1 for #self#
+    arg_names = slot_syms[2:meth.nargs]  # nargs includes 1 for `#self#`
     return arg_names
 end
 
@@ -47,7 +46,9 @@ end
     parameters(type)
 
 extracts the type-parameters of the `type`.
-E.g. `parameters(Foo{A, B, C}) == [A, B, C]`
+```jldoctest
+julia> parameters(Foo{A, B, C}) == [A, B, C]
+true
 """
 parameters(sig::UnionAll) = parameters(sig.body)
 parameters(sig::DataType) = sig.parameters
@@ -88,7 +89,7 @@ function get_args(meth::Method)
     end
 end
 
-function get_whereparam(x::TypeVar)
+function where_parameters(x::TypeVar)
     if x.lb === Union{} && x.ub === Any
         return x.name
     elseif x.lb === Union{}
