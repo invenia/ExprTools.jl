@@ -37,7 +37,7 @@ function slot_syms(meth::Method)
 end
 function argument_names(meth::Method)
     slot_syms = get_slot_sym(meth)
-    @assert slot_syms[1] == Symbol("#self#")
+    @assert slot_syms[1] === Symbol("#self#")
     arg_names = slot_syms[2:meth.nargs]  # nargs includes 1 for `#self#`
     return arg_names
 end
@@ -45,7 +45,8 @@ end
 """
     parameters(type)
 
-extracts the type-parameters of the `type`.
+Extracts the type-parameters of the `type`.
+
 ```jldoctest
 julia> parameters(Foo{A, B, C}) == [A, B, C]
 true
@@ -74,7 +75,6 @@ function name_of_arg_type(x::UnionAll)
     whereparam = get_whereparam(x.var)
     return :($name where $whereparam)
 end
-
 
 
 function get_args(meth::Method)
