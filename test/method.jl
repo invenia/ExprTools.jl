@@ -29,8 +29,12 @@ end
         @test_signature f1(x) = 2x
         @test_signature f2(x::Int64) = 2x
         @test_signature f3(x::Int64, y) = 2x
+    end
 
-        @test_signature bf4(::Int) = 2x
+    @testset "missing argnames" begin
+        @test_signature ma1(::Int32) = 2x
+        @test_signature ma2(::Int32, ::Bool) = 2x
+        @test_signature ma3(x, ::Int32) = 2x
     end
 
     @testset "Whereparams" begin
@@ -91,3 +95,26 @@ end
         #@test_signature f17(x; y=3x) = 2x
     end
 end
+
+#==
+
+julia> signature(first(methods(((::T) where T) -> 0)))  # Anonymous parameter
+Dict{Symbol,Any} with 4 entries:
+  :name        => Symbol("#35")
+  :args        => Expr[:(var"#unused#"::T)]
+  :head        => :function
+  :whereparams => Any[:T]
+
+julia> signature(first(methods((x=1) -> x)))  # Missing arg
+Dict{Symbol,Any} with 3 entries:
+  :name => Symbol("#42")
+  :args => Union{Expr, Symbol}[]
+  :head => :function
+
+julia> signature(first(methods(Rational{Int8}, (Integer,))))  # No `:params`
+Dict{Symbol,Any} with 4 entries:
+  :name        => :Rational
+  :args        => Expr[:(x::Integer)]
+  :head        => :function
+  :whereparams => Any[:(T <: Integer)]
+  ==#

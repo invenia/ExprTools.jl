@@ -69,10 +69,14 @@ function arguments(meth::Method)
     arg_names = argument_names(meth)
     arg_types = argument_types(meth)
     map(arg_names, arg_types) do name, type
-        if type === Any
+        has_name = name !== Symbol("#unused#")
+        type_name = name_of_arg_type(type)
+        if type === Any && has_name
             name
+        elseif has_name
+            :($name::$type_name)
         else
-            :($name::$(name_of_arg_type(type)))
+            :(::$type_name)
         end
     end
 end
