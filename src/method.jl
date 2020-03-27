@@ -23,38 +23,26 @@ function signature(meth::Method)
     def = Dict{Symbol,Any}()
     def[:name] = meth.name
 
-    def[:args] = get_args(meth)
-    def[:whereparams] = get_whereparams(meth)
+    def[:args] = arguments(meth)
+    def[:whereparams] = where_parameters(meth)
 
     return Dict(k=>v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
 
-function slot_syms(meth::Method)
-    # In 1.3 can do:
-    # Symbol.(split(meth.slot_syms, '\0'; keepempty=false))
+function slot_names(meth::Method)
     ci = Base.uncompressed_ast(meth)
     return ci.slotnames
 end
+
 function argument_names(meth::Method)
-    slot_syms = get_slot_sym(meth)
+    slot_syms = slot_names(meth)
     @assert slot_syms[1] === Symbol("#self#")
     arg_names = slot_syms[2:meth.nargs]  # nargs includes 1 for `#self#`
     return arg_names
 end
 
-"""
-    parameters(type)
 
-Extracts the type-parameters of the `type`.
-
-```jldoctest
-julia> parameters(Foo{A, B, C}) == [A, B, C]
-true
-"""
-parameters(sig::UnionAll) = parameters(sig.body)
-parameters(sig::DataType) = sig.parameters
-
-function get_arg_types(meth::Method)
+function argument_types(meth::Method)
     # First parameter of `sig` is the type of the function itself
     return parameters(meth.sig)[2:end]
 end
@@ -72,14 +60,14 @@ function name_of_arg_type(x::DataType)
 end
 function name_of_arg_type(x::UnionAll)
     name = name_of_arg_type(x.body)
-    whereparam = get_whereparam(x.var)
+    whereparam = where_parameters(x.var)
     return :($name where $whereparam)
 end
 
 
-function get_args(meth::Method)
-    arg_names = get_arg_names(meth)
-    arg_types = get_arg_types(meth)
+function arguments(meth::Method)
+    arg_names = argument_names(meth)
+    arg_types = argument_types(meth)
     map(arg_names, arg_types) do name, type
         if type === Any
             name
@@ -101,13 +89,13 @@ function where_parameters(x::TypeVar)
     end
 end
 
-function get_whereparams(meth::Method)
+function where_parameters(meth::Method)
     meth.sig isa UnionAll || return nothing
 
     whereparams = []
     sig = meth.sig
     while sig isa UnionAll
-        push!(whereparams, get_whereparam(sig.var))
+        push!(whereparams, where_parameters(sig.var))
         sig = sig.body
     end
     return whereparams
