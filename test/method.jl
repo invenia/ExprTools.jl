@@ -1,34 +1,49 @@
-macro test_signature(function_def_expr)
+macro test_signature(function_def_expr, method=nothing)
     _target = splitdef(function_def_expr)
-    delete!(_target, :head) # never look at :head
-    delete!(_target, :body) # never looking at body
-    ret = quote
+    return quote
         fun = $(esc(function_def_expr))
-        meths = methods(fun)
-        target = $(_target)
-        if length(meths) > 1
-            error("can only check signatures of functions with only one method")
+        meth = if ($method === nothing)
+            only_method(fun, Tuple{Vararg{Any}})
+        else
+            $(esc(method))
         end
-        sig = signature(first(meths))
+        sig = signature(meth)
+        test_matches(sig, $(_target))
     end
-    for key in keys(_target)
-        # interpolate in the `key` to make test results easy to read
-        push!(
-            ret.args,
-            :(@test target[$(QuoteNode(key))] == get(sig, $(QuoteNode(key)), nothing)),
-        )
-    end
-    return ret
 end
 
+function test_matches(candidate::AbstractDict, target::Dict)
+    # we want to use literals in the tests so that @test gives useful output on failure
+    haskey(target, :name) && @test target[:name] == get(candidate, :name, nothing)
+    haskey(target, :params) && @test target[:params] == get(candidate, :params, nothing)
+    haskey(target, :args) && @test target[:args] == get(candidate, :args, nothing)
+    haskey(target, :whereparams) &&
+        @test target[:whereparams] == get(candidate, :whereparams, nothing)
+    return nothing
+end
+
+"""
+    only_method(f, typ)
+
+Return the only method of `f` that accepts the types indicated by `type`.
+Similar to `only(methods(f, typ))` in julia 1.4.
+"""
+function only_method(f, typ)
+    meths = methods(f, typ)
+    if length(meths) !== 1
+        error("not just one method matches the given types. Found $(length(meths))")
+    end
+    return first(meths)
+end
 
 
 
 @testset "method.jl: signature" begin
     @testset "Basics" begin
-        @test_signature f1(x) = 2x
-        @test_signature f2(x::Int64) = 2x
-        @test_signature f3(x::Int64, y) = 2x
+        @test_signature basic1(x) = 2x
+        @test_signature basic2(x::Int64) = 2x
+        @test_signature basic3(x::Int64, y) = 2x
+        @test_signature basic4() = 2
     end
 
     @testset "missing argnames" begin
@@ -74,9 +89,11 @@ end
     end
 
     @testset "anon functions" begin
+        @test_signature (x) -> x  # no args
         @test_signature (x)->2x
-        # following is broken:
-        # @test_signature ((::T) where T) -> 0
+
+        @test_signature ((::T) where T) -> 0   # Anonymous parameter
+
 
     end
 
@@ -92,29 +109,55 @@ end
 
     @testset "kwargs" begin  # We do not support them right now
         #Following is broken:
-        #@test_signature f17(x; y=3x) = 2x
+        #@test_signature kwargs17(x; y=3x) = 2x
+    end
+
+
+    @testset "Constructors (basic)" begin
+        # demo type for testing on
+        struct NoParamStruct
+            x
+        end
+
+        test_matches(  # default constructor
+            signature(only_method(NoParamStruct, Tuple{Any})),
+            Dict(:name => :NoParamStruct, :args => [:x]),
+        )
+
+
+        @test_signature(
+            NoParamStruct(x::Bool, y::Int32) = NoParamStruct(x || y > 2),
+            only_method(NoParamStruct, Tuple{Bool, Int32})
+        )
+
+        struct OneParamStructBasic{T}
+            x::T
+        end
+
+        test_matches(  # default constructor
+            signature(only_method(OneParamStructBasic, Tuple{Any})),
+            Dict(:name => :OneParamStruct, :args => [:(x::T)]),
+        )
+
+        @test_signature(
+            OneParamStructBasic(x::Bool, y::Int32) = OneParamStruct(x || y > 2),
+            only_method(OneParamStructBasic, Tuple{Bool, Int32})
+        )
+    end
+
+    @testset "params (via Constructors with type params" begin
+        struct OneParamStruct{T}
+            x::T
+        end
+
+        @test_signature(
+            OneParamStruct{String}(x::Int32, y::Bool) = OneParamStruct(string(x^y)),
+            only_method(OneParamStruct{String}, Tuple{Int32, Bool})
+        )
+
+        @test_signature(  # whereparams on params
+            OneParamStruct{T}(x::Float32, y::Bool) where T<:AbstractFloat = OneParamStruct(x^y),
+            only_method(OneParamStruct{Float32}, Tuple{Float32, Bool})
+        )
     end
 end
-
-#==
-
-julia> signature(first(methods(((::T) where T) -> 0)))  # Anonymous parameter
-Dict{Symbol,Any} with 4 entries:
-  :name        => Symbol("#35")
-  :args        => Expr[:(var"#unused#"::T)]
-  :head        => :function
-  :whereparams => Any[:T]
-
-julia> signature(first(methods((x=1) -> x)))  # Missing arg
-Dict{Symbol,Any} with 3 entries:
-  :name => Symbol("#42")
-  :args => Union{Expr, Symbol}[]
-  :head => :function
-
-julia> signature(first(methods(Rational{Int8}, (Integer,))))  # No `:params`
-Dict{Symbol,Any} with 4 entries:
-  :name        => :Rational
-  :args        => Expr[:(x::Integer)]
-  :head        => :function
-  :whereparams => Any[:(T <: Integer)]
-  ==#

@@ -25,6 +25,7 @@ function signature(meth::Method)
 
     def[:args] = arguments(meth)
     def[:whereparams] = where_parameters(meth)
+    def[:params] = parameters(meth)
 
     return Dict(k=>v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
@@ -47,19 +48,19 @@ function argument_types(meth::Method)
     return parameters(meth.sig)[2:end]
 end
 
-name_of_arg_type(x) = x
-name_of_arg_type(tv::TypeVar) = tv.name
-function name_of_arg_type(x::DataType)
+name_of_type(x) = x
+name_of_type(tv::TypeVar) = tv.name
+function name_of_type(x::DataType)
     name_sym = Symbol(x.name)
     if isempty(x.parameters)
         return name_sym
     else
-        parameter_names = name_of_arg_type.(x.parameters)
+        parameter_names = name_of_type.(x.parameters)
         return :($(name_sym){$(parameter_names...)})
     end
 end
-function name_of_arg_type(x::UnionAll)
-    name = name_of_arg_type(x.body)
+function name_of_type(x::UnionAll)
+    name = name_of_type(x.body)
     whereparam = where_parameters(x.var)
     return :($name where $whereparam)
 end
@@ -70,7 +71,7 @@ function arguments(meth::Method)
     arg_types = argument_types(meth)
     map(arg_names, arg_types) do name, type
         has_name = name !== Symbol("#unused#")
-        type_name = name_of_arg_type(type)
+        type_name = name_of_type(type)
         if type === Any && has_name
             name
         elseif has_name
@@ -103,4 +104,13 @@ function where_parameters(meth::Method)
         sig = sig.body
     end
     return whereparams
+end
+
+function parameters(meth::Method)
+    typeof_type = first(parameters(meth.sig))  # will be e.g Type{Foo{P}} if it has any parameters
+    typeof_type <: Type{<:Any} || return nothing
+
+    function_type = first(parameters(typeof_type))  # will be e.g. Foo{P}
+    parameter_types = parameters(function_type)
+    return [name_of_type(type) for type in parameter_types]
 end
