@@ -3,7 +3,7 @@ macro test_signature(function_def_expr, method=nothing)
     return quote
         fun = $(esc(function_def_expr))
         meth = if ($method === nothing)
-            only_method(fun, Tuple{Vararg{Any}})
+            only_method(fun)
         else
             $(esc(method))
         end
@@ -23,12 +23,13 @@ function test_matches(candidate::AbstractDict, target::Dict)
 end
 
 """
-    only_method(f, typ)
+    only_method(f, [typ])
 
-Return the only method of `f` that accepts the types indicated by `type`.
+Return the only method of `f`,
+filtering by those accepts the types indicated by `typ` if it is provided.
 Similar to `only(methods(f, typ))` in julia 1.4.
 """
-function only_method(f, typ)
+function only_method(f, typ=Tuple{Vararg{Any}})
     meths = methods(f, typ)
     if length(meths) !== 1
         error("not just one method matches the given types. Found $(length(meths))")
@@ -74,18 +75,19 @@ end
         @test_signature f14(x::Array{Int64, 1}) = 2x
         @test_signature f15(x::Array{T, 1}) where T = 2x
 
-        # Note: we don't test: `f16(x::Array{<:Real, 1}) = 2x` as it lowers to same
-        # method as below, but has a different AST according to `splitdef` so we can't
-        # generate a solution that would unlower to two different AST for same method
         @test_signature f16(x::Array{T, 1} where T<:Real) = 2x
 
-        #==
-        # noncanonical form works
-        old_sig = signature(first(methods(f16)))
-        f16(x::Array{<:Real, 1} = 2x  # redefine it
-        @assert length(methods(f16)) == 1  # no new method should have been created
-        new_sig = signature(first(methods(f16)))
-        ==#
+        # This is the same method as f16 (other than name), and one displaces the other
+        # but they have different method objects. And different (but equivelent) ASTd
+        # this generates something that should be the same as what `signature(f16)` does
+        # but with a gensym'd variable name
+        f16_alt(x::Array{<:Real, 1}) = 2x
+        f16_alt_sig = signature(first(methods(f16_alt)))
+        @test f16_alt_sig[:name] == :f16_alt
+        @test occursin(  # Hack to deal with gensymed name. Make it a string and use regex
+            r"^Expr\[:\(x::\(Array\{var\"(.*?)\", 1\} where var\"\1\" <: Real\)\)\]$",
+            string(f16_alt_sig[:args])
+        )
     end
 
     @testset "anon functions" begin
@@ -98,10 +100,18 @@ end
     end
 
     @testset "vararg" begin
-        # we don't check `f18(xs...) = 2` as it lowers to the same method as below
-        # but has a different AST according to `splitdef` so we can't
-        # generate a solution that would unlower to two different AST for same method.
         @test_signature f17(xs::Vararg{Any, N} where N) = 2
+
+        # `f17_alt(xs...) = 2` lowers to the same method as `f18`
+        # but has a different AST according to `splitdef` so we can't us @test_signature
+        f17_alt(xs...) = 2
+        test_matches(
+            signature(only_method(f17_alt)),
+            Dict(
+                :name => :f17_alt,
+                :args => [:(xs::(Vararg{Any, N} where N))]
+            )
+        )
 
         @test_signature f18(xs::Vararg{Int64, N} where N) = 2
         @test_signature f19(x, xs::Vararg{Any, N} where N) = 2x
@@ -110,6 +120,15 @@ end
     @testset "kwargs" begin  # We do not support them right now
         #Following is broken:
         #@test_signature kwargs17(x; y=3x) = 2x
+
+        # at least be sure we get the rest right:
+        test_matches(
+            signature(only_method(kwargs17)),
+            Dict(
+                :name => :kwargs17,
+                :args => [:x]
+            )
+        )
     end
 
 
@@ -136,7 +155,7 @@ end
 
         test_matches(  # default constructor
             signature(only_method(OneParamStructBasic, Tuple{Any})),
-            Dict(:name => :OneParamStruct, :args => [:(x::T)]),
+            Dict(:name => :OneParamStructBasic, :args => [:(x::T)]),
         )
 
         @test_signature(
