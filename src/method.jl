@@ -1,7 +1,7 @@
 """
     signature(meth::Method) -> Dict{Symbol,Any}
 
-Finds the expression for a methods signature as broken up into its various components
+Finds the expression for a method's signature as broken up into its various components
 including:
 
 - `:name`: Name of the function
@@ -9,7 +9,7 @@ including:
 - `:args`: Positional arguments of the function
 - `:whereparams`: Where parameters
 
-All components listed above may not be present in the returned dictionary
+All components listed above may not be present in the returned dictionary.
 
 Right now the following components will never be returned:
  - `:kwargs`: Keyword arguments of the function
@@ -17,17 +17,17 @@ Right now the following components will never be returned:
  - `:body`: Function body
 
 These are the same components returned by [`splitdef`](@ref) and required by
-[`combinedef`](@red), except for the `:body` component which will never be present.
+[`combinedef`](@ref), except for the `:body` component which will never be present.
 """
 function signature(meth::Method)
-    def = Dict{Symbol,Any}()
+    def = Dict{Symbol, Any}()
     def[:name] = meth.name
 
     def[:args] = arguments(meth)
     def[:whereparams] = where_parameters(meth)
     def[:params] = parameters(meth)
 
-    return Dict(k=>v for (k, v) in def if v !== nothing)  # filter out nonfields.
+    return Dict(k => v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
 
 function slot_names(meth::Method)
