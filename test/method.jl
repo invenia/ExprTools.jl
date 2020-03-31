@@ -26,7 +26,6 @@ end
     only_method(f, [typ])
 
 Return the only method of `f`,
-filtering by those accepts the types indicated by `typ` if it is provided.
 Similar to `only(methods(f, typ))` in julia 1.4.
 """
 function only_method(f, typ=Tuple{Vararg{Any}})
