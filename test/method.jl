@@ -81,17 +81,17 @@ end
         # this generates something that should be the same as what `signature(f16)` does
         # but with a gensym'd variable name
         f16_alt(x::Array{<:Real, 1}) = 2x
-        f16_alt_sig = signature(first(methods(f16_alt)))
+        f16_alt_sig = signature(only_method(f16_alt))
         @test f16_alt_sig[:name] == :f16_alt
         @test occursin(  # Hack to deal with gensymed name. Make it a string and use regex
-            r"^Expr\[:\(x::\(Array\{var\"(.*?)\", 1\} where var\"\1\" <: Real\)\)\]$",
+            r"^\QExpr[:(x::(Array{var\"\E(.*?)\Q\", 1} where var\"1\" <: Real))]\E$",
             string(f16_alt_sig[:args])
         )
     end
 
     @testset "anon functions" begin
         @test_signature (x) -> x  # no args
-        @test_signature (x)->2x
+        @test_signature (x) -> 2x
 
         @test_signature ((::T) where T) -> 0   # Anonymous parameter
 
@@ -163,7 +163,7 @@ end
         )
     end
 
-    @testset "params (via Constructors with type params" begin
+    @testset "params (via Constructors with type params)" begin
         struct OneParamStruct{T}
             x::T
         end
