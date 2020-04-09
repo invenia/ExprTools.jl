@@ -1,5 +1,5 @@
 """
-    signature(meth::Method) -> Dict{Symbol,Any}
+    signature(m::Method) -> Dict{Symbol,Any}
 
 Finds the expression for a method's signature as broken up into its various components
 including:
@@ -19,33 +19,33 @@ Right now the following components will never be returned:
 These are the same components returned by [`splitdef`](@ref) and required by
 [`combinedef`](@ref), except for the `:body` component which will never be present.
 """
-function signature(meth::Method)
+function signature(m::Method)
     def = Dict{Symbol, Any}()
-    def[:name] = meth.name
+    def[:name] = m.name
 
-    def[:args] = arguments(meth)
-    def[:whereparams] = where_parameters(meth)
-    def[:params] = parameters(meth)
+    def[:args] = arguments(m)
+    def[:whereparams] = where_parameters(m)
+    def[:params] = parameters(m)
 
     return Dict(k => v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
 
-function slot_names(meth::Method)
-    ci = Base.uncompressed_ast(meth)
+function slot_names(m::Method)
+    ci = Base.uncompressed_ast(m)
     return ci.slotnames
 end
 
-function argument_names(meth::Method)
-    slot_syms = slot_names(meth)
+function argument_names(m::Method)
+    slot_syms = slot_names(m)
     @assert slot_syms[1] === Symbol("#self#")
-    arg_names = slot_syms[2:meth.nargs]  # nargs includes 1 for `#self#`
+    arg_names = slot_syms[2:m.nargs]  # nargs includes 1 for `#self#`
     return arg_names
 end
 
 
-function argument_types(meth::Method)
+function argument_types(m::Method)
     # First parameter of `sig` is the type of the function itself
-    return parameters(meth.sig)[2:end]
+    return parameters(m.sig)[2:end]
 end
 
 name_of_type(x) = x
@@ -66,9 +66,9 @@ function name_of_type(x::UnionAll)
 end
 
 
-function arguments(meth::Method)
-    arg_names = argument_names(meth)
-    arg_types = argument_types(meth)
+function arguments(m::Method)
+    arg_names = argument_names(m)
+    arg_types = argument_types(m)
     map(arg_names, arg_types) do name, type
         has_name = name !== Symbol("#unused#")
         type_name = name_of_type(type)
@@ -94,11 +94,11 @@ function where_parameters(x::TypeVar)
     end
 end
 
-function where_parameters(meth::Method)
-    meth.sig isa UnionAll || return nothing
+function where_parameters(m::Method)
+    m.sig isa UnionAll || return nothing
 
     whereparams = []
-    sig = meth.sig
+    sig = m.sig
     while sig isa UnionAll
         push!(whereparams, where_parameters(sig.var))
         sig = sig.body
@@ -106,8 +106,8 @@ function where_parameters(meth::Method)
     return whereparams
 end
 
-function parameters(meth::Method)
-    typeof_type = first(parameters(meth.sig))  # will be e.g Type{Foo{P}} if it has any parameters
+function parameters(m::Method)
+    typeof_type = first(parameters(m.sig))  # will be e.g Type{Foo{P}} if it has any parameters
     typeof_type <: Type{<:Any} || return nothing
 
     function_type = first(parameters(typeof_type))  # will be e.g. Foo{P}

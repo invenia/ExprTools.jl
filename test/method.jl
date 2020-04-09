@@ -2,12 +2,12 @@ macro test_signature(function_def_expr, method=nothing)
     _target = splitdef(function_def_expr)
     return quote
         fun = $(esc(function_def_expr))
-        meth = if ($method === nothing)
+        m = if ($method === nothing)
             only_method(fun)
         else
             $(esc(method))
         end
-        sig = signature(meth)
+        sig = signature(m)
         test_matches(sig, $(_target))
     end
 end
@@ -29,11 +29,11 @@ Return the only method of `f`,
 Similar to `only(methods(f, typ))` in julia 1.4.
 """
 function only_method(f, typ=Tuple{Vararg{Any}})
-    meths = methods(f, typ)
-    if length(meths) !== 1
-        error("not just one method matches the given types. Found $(length(meths))")
+    ms = methods(f, typ)
+    if length(ms) !== 1
+        error("not just one method matches the given types. Found $(length(ms))")
     end
-    return first(meths)
+    return first(ms)
 end
 
 
@@ -119,7 +119,7 @@ end
     @testset "kwargs" begin  # We do not support them right now
         #Following is broken:
         #@test_signature kwargs17(x; y=3x) = 2x
-
+        kwargs17(x; y=3x) = 2x
         # at least be sure we get the rest right:
         test_matches(
             signature(only_method(kwargs17)),
