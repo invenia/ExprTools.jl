@@ -3,10 +3,7 @@
 
 Extracts the type-parameters of the `type`.
 
-```jldoctest
-julia> parameters(Foo{A, B, C}) == [A, B, C]
-true
-```
+e.g. `parameters(Foo{A, B, C}) == [A, B, C]`
 """
 parameters(sig::UnionAll) = parameters(sig.body)
 parameters(sig::DataType) = sig.parameters

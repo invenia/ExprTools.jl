@@ -10,4 +10,5 @@ CurrentModule = ExprTools
 ```@docs
 splitdef
 combinedef
+signature
 ```
