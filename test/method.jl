@@ -94,8 +94,6 @@ end
         @test_signature (x) -> 2x
 
         @test_signature ((::T) where T) -> 0   # Anonymous parameter
-
-
     end
 
     @testset "vararg" begin
