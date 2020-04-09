@@ -26,7 +26,7 @@ end
     only_method(f, [typ])
 
 Return the only method of `f`,
-Similar to `only(methods(f, typ))` in julia 1.4.
+Similar to `only(methods(f, typ))` in Julia 1.4.
 """
 function only_method(f, typ=Tuple{Vararg{Any}})
     ms = methods(f, typ)
