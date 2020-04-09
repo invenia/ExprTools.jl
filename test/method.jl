@@ -17,8 +17,9 @@ function test_matches(candidate::AbstractDict, target::Dict)
     haskey(target, :name) && @test target[:name] == get(candidate, :name, nothing)
     haskey(target, :params) && @test target[:params] == get(candidate, :params, nothing)
     haskey(target, :args) && @test target[:args] == get(candidate, :args, nothing)
-    haskey(target, :whereparams) &&
+    if haskey(target, :whereparams)
         @test target[:whereparams] == get(candidate, :whereparams, nothing)
+    end
     return nothing
 end
 
