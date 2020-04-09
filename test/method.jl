@@ -84,7 +84,7 @@ end
         f16_alt_sig = signature(only_method(f16_alt))
         @test f16_alt_sig[:name] == :f16_alt
         @test occursin(  # Hack to deal with gensymed name. Make it a string and use regex
-            r"^\QExpr[:(x::(Array{var\"\E(.*?)\Q\", 1} where var\"1\" <: Real))]\E$",
+            r"^\QExpr[:(x::(Array{\E(.*?)\Q, 1} where \E\1\Q <: Real))]\E$",
             string(f16_alt_sig[:args])
         )
     end
