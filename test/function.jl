@@ -786,6 +786,7 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
 
         d = splitdef(expr)
         delete!(d, :head)
+        @assert !haskey(d, :head)
 
         c_expr = combinedef(d)
         @test c_expr == expr
