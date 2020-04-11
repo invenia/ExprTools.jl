@@ -545,6 +545,28 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
             @test strip_lineno!(c_expr) == strip_lineno!(expr)
         end
 
+        @testset "(x; y = 0)" begin
+            f, expr = if short
+                @audit (x; y = 0) -> (x, y)
+            else
+                @audit function (x; y = 0); (x, y) end
+            end
+            @test length(methods(f)) == 1
+            @test f(0) == (0, 0)
+            @test f(0, y=1) == (0, 1)
+
+            # Note: the semi-colon is missing from the expression
+            d = splitdef(expr)
+            @test keys(d) == Set([:head, :args, :kwargs, :body])
+            @test d[:args] == [:x]
+            @test d[:kwargs] == [Expr(:kw, :y, 0)]
+
+            c_expr = combinedef(d)
+            expr = Expr(:->, Expr(:tuple, Expr(:parameters, Expr(:kw, :y, 0)), :x), Expr(:block, :((x, y))))
+            expr.head = short ? :-> : :function
+            @test strip_lineno!(c_expr) == strip_lineno!(expr)
+        end
+
         @testset "Expr(:block, :x, :y)" begin
             expr = Expr(:->, Expr(:block, :x, :y), Expr(:block, :((x, y))))
             expr.head = short ? :-> : :function

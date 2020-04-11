@@ -102,7 +102,7 @@ function splitdef(ex::Expr; throw::Bool=true)
             if !haskey(def, :args)
                 def[:args] = [arg]
             elseif !haskey(def, :kwargs)
-                def[:kwargs] = [arg]
+                def[:kwargs] = arg isa Symbol ? [arg] : [:($(Expr(:kw, arg.args...)))]
             else
                 return invalid_def("an invalid block expression as arguments")
             end
