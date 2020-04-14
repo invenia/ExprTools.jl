@@ -22,7 +22,7 @@ Unsupported:
 - `:head`: Expression head of the function definition (`:function`, `:(=)`, `:(->)`)
 
 For more complete coverage, consider using [`splitdef`](@ref)
-with [`CodeTracking.definition`](https://github.com/timholy/CodeTracking.jl)).
+with [`CodeTracking.definition`](https://github.com/timholy/CodeTracking.jl).
 
 The dictionary of components returned by `signature` match those returned by
 [`splitdef`](@ref) and include all that are required by [`combinedef`](@ref), except for
