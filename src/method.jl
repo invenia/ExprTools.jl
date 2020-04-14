@@ -12,7 +12,7 @@ including:
 All components listed above may not be present in the returned dictionary if they are
 not in the function definition.
 
-Limitted support for:
+Limited support for:
 - `:kwargs`: Keyword arguments of the function.
   Only the names will be included, not the default values or type constraints.
 
@@ -24,7 +24,7 @@ Unsupported:
 For more complete coverage, consider using [`splitdef`](@ref)
 with [`CodeTracking.definition`](https://github.com/timholy/CodeTracking.jl)).
 
-The dictionary of compenents returned by `signature` match those returned by
+The dictionary of components returned by `signature` match those returned by
 [`splitdef`](@ref) and include all that are required by [`combinedef`](@ref), except for
 the `:body` component.
 """
