@@ -141,9 +141,13 @@ end
 Create a function definition expression from various components. Typically used to construct
 a function using the result of [`splitdef`](@ref).
 
+If `def[:head]` is not provided it will default to `:function`.
+
 For more details see the documentation on [`splitdef`](@ref).
 """
 function combinedef(def::Dict{Symbol,Any})
+    head = get(def, :head, :function)
+
     # Determine the name of the function including parameterization
     name = if haskey(def, :params)
         Expr(:curly, def[:name], def[:params]...)
@@ -170,7 +174,7 @@ function combinedef(def::Dict{Symbol,Any})
     # Create a partial function signature including the name and arguments
     sig = if name !== nothing
         :($name($(args...)))  # Equivalent to `Expr(:call, name, args...)` but faster
-    elseif def[:head] === :(->) && length(args) == 1 && !haskey(def, :kwargs)
+    elseif head === :(->) && length(args) == 1 && !haskey(def, :kwargs)
         args[1]
     else
         :(($(args...),))  # Equivalent to `Expr(:tuple, args...)` but faster
@@ -187,9 +191,9 @@ function combinedef(def::Dict{Symbol,Any})
     end
 
     func = if haskey(def, :body)
-        Expr(def[:head], sig, def[:body])
+        Expr(head, sig, def[:body])
     else
-        Expr(def[:head], name)
+        Expr(head, name)
     end
 
     return func

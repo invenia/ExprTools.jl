@@ -825,6 +825,18 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
         end
     end
 
+    @testset "combinedef with no `:head`" begin
+        # should default to `:function`
+        f, expr = @audit function f() end
+
+        d = splitdef(expr)
+        delete!(d, :head)
+        @assert !haskey(d, :head)
+
+        c_expr = combinedef(d)
+        @test c_expr == expr
+    end
+
     @testset "invalid definitions" begin
         # Invalid function type
         @test_splitdef_invalid Expr(:block)
