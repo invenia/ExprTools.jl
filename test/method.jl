@@ -21,6 +21,10 @@ function test_matches(candidate::AbstractDict, target::Dict)
         @test target[:whereparams] == get(candidate, :whereparams, nothing)
     end
     haskey(target, :kwargs) && @test target[:kwargs] == get(candidate, :kwargs, nothing)
+
+    # TODO: support return value declaration in signature
+    # See https://github.com/invenia/ExprTools.jl/issues/5
+    haskey(target, :rtype) && @test_broken target[:rtype] == get(candidate, :rtype, nothing)
     return nothing
 end
 
@@ -155,6 +159,16 @@ end
                 :kwargs => [:y],  # should be `[Expr(:kw, :(y::Int32), 4)]
             )
         )
+    end
+
+    @testset "Return Type" begin
+        # These all hit the `@test_broken`
+        @test_signature rt1(x)::Int32 = 2x
+
+        # need to use long-form becase https://github.com/JuliaLang/julia/issues/35471
+        @test_signature function rt2(x::T)::T where T
+            return 2x
+        end
     end
 
     # Only test on 1.3 because of issues with declaring structs in 1.0-1.2
