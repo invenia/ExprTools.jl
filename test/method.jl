@@ -173,7 +173,7 @@ end
 
     # Only test on 1.3 because of issues with declaring structs in 1.0-1.2
     # TODO: https://github.com/invenia/ExprTools.jl/issues/7
-    VERSION >= v"1.3" && @testset "Constructors (basic)" begin
+    VERSION >= v"1.3" && @eval @testset "Constructors (basic)" begin
         # demo type for testing on
         struct NoParamStruct
             x
@@ -207,7 +207,7 @@ end
 
     # Only test on 1.3 because of issues with declaring structs in 1.0-1.2
     # TODO: https://github.com/invenia/ExprTools.jl/issues/7
-    VERSION >= v"1.3" && @testset "params (via Constructors with type params)" begin
+    VERSION >= v"1.3" && @eval @testset "params (via Constructors with type params)" begin
         struct OneParamStruct{T}
             x::T
         end
