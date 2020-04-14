@@ -20,6 +20,7 @@ function test_matches(candidate::AbstractDict, target::Dict)
     if haskey(target, :whereparams)
         @test target[:whereparams] == get(candidate, :whereparams, nothing)
     end
+    haskey(target, :kwargs) && @test target[:kwargs] == get(candidate, :kwargs, nothing)
     return nothing
 end
 
@@ -36,8 +37,6 @@ function only_method(f, typ=Tuple{Vararg{Any}})
     end
     return first(ms)
 end
-
-
 
 @testset "method.jl: signature" begin
     @testset "Basics" begin
@@ -115,16 +114,45 @@ end
         @test_signature f19(x, xs::Vararg{Any, N} where N) = 2x
     end
 
-    @testset "kwargs" begin  # We do not support them right now
-        #Following is broken:
-        #@test_signature kwargs17(x; y=3x) = 2x
-        kwargs17(x; y=3x) = 2x
+    @testset "kwargs" begin
+        @test_signature kwargs1(x; a, b, c) = 2
+
+        # The following is broken as it doesn't get the kwarg default value
+        #@test_signature kwargs2(x; y=3) = 2x
         # at least be sure we get the rest right:
+        kwargs2(x; y=3) = 2x
         test_matches(
-            signature(only_method(kwargs17)),
+            signature(only_method(kwargs2)),
             Dict(
-                :name => :kwargs17,
-                :args => [:x]
+                :name => :kwargs2,
+                :args => [:x],
+                :kwargs => [:y],  # this should have been `[Expr(:kw, :y, 3))]`
+            )
+        )
+
+        # The following is broken as it doesn't get the kwarg type-constraint
+        #@test_signature kwargs3(x; y::Int32) = 2x
+        # at least be sure we get the rest right:
+        kwargs3(x; y::Int32) = 2x
+        test_matches(
+            signature(only_method(kwargs3)),
+            Dict(
+                :name => :kwargs3,
+                :args => [:x],
+                :kwargs => [:y],  # should be `[:(y::Int32)]`
+            )
+        )
+
+        # The following is broken as it doesn't get the kwarg type-constraint nor default
+        #@test_signature kwargs3(x; y::Int32=4) = 2x
+        # at least be sure we get the rest right:
+        kwargs4(x; y::Int32=4) = 2x
+        test_matches(
+            signature(only_method(kwargs4)),
+            Dict(
+                :name => :kwargs4,
+                :args => [:x],
+                :kwargs => [:y],  # should be `[Expr(:kw, :(y::Int32), 4)]
             )
         )
     end

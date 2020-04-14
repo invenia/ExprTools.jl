@@ -9,15 +9,24 @@ including:
 - `:args`: Positional arguments of the function
 - `:whereparams`: Where parameters
 
-All components listed above may not be present in the returned dictionary.
+All components listed above may not be present in the returned dictionary if they are
+not in the function definition.
 
-Right now the following components will never be returned:
- - `:kwargs`: Keyword arguments of the function
- - `:rtype`: Return type of the function
- - `:body`: Function body
+Limitted support for:
+- `:kwargs`: Keyword arguments of the function.
+  Only the names will be included, not the default values or type constraints.
 
-These are the same components returned by [`splitdef`](@ref) and required by
-[`combinedef`](@ref), except for the `:body` component which will never be present.
+Unsupported:
+- `:rtype`: Return type of the function
+- `:body`: Function body0
+- `:head`: Expression head of the function definition (`:function`, `:(=)`, `:(->)`)
+
+For more complete coverage, consider using [`splitdef`](@ref)
+with [`CodeTracking.definition`](https://github.com/timholy/CodeTracking.jl)).
+
+The dictionary of compenents returned by `signature` match those returned by
+[`splitdef`](@ref) and include all that are required by [`combinedef`](@ref), except for
+the `:body` component.
 """
 function signature(m::Method)
     def = Dict{Symbol, Any}()
@@ -26,6 +35,7 @@ function signature(m::Method)
     def[:args] = arguments(m)
     def[:whereparams] = where_parameters(m)
     def[:params] = parameters(m)
+    def[:kwargs] = kwargs(m)
 
     return Dict(k => v for (k, v) in def if v !== nothing)  # filter out nonfields.
 end
@@ -113,4 +123,18 @@ function parameters(m::Method)
     function_type = first(parameters(typeof_type))  # will be e.g. Foo{P}
     parameter_types = parameters(function_type)
     return [name_of_type(type) for type in parameter_types]
+end
+
+function kwargs(m::Method)
+    names = kwarg_names(m)
+    isempty(names) && return nothing  # we know it has no keywords.
+    # TODO: Enhance this to support more than just their names
+    # see https://github.com/invenia/ExprTools.jl/issues/6
+    return names
+end
+
+function kwarg_names(m::Method)
+    mt = Base.get_methodtable(m)
+    !isdefined(mt, :kwsorter) && return []  # no kwsorter means no keywords for sure.
+    return Base.kwarg_decl(m, typeof(mt.kwsorter))
 end
