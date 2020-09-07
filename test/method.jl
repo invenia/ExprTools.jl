@@ -72,6 +72,8 @@ end
 
         @test_signature f12(x::S) where {S>:Integer} = 2x
         @test_signature f13(x::S) where Integer<:S<:Number = 2x
+
+        @test_signature f_where_union(x::T) where T<:Union{Bool, Int32} = 2x
     end
 
     @testset "Arg types with type-parameters" begin

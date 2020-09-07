@@ -34,7 +34,7 @@ function signature(m::Method)
 
     def[:args] = arguments(m)
     def[:whereparams] = where_parameters(m)
-    def[:params] = parameters(m)
+    def[:params] = type_parameters(m)
     def[:kwargs] = kwargs(m)
 
     return Dict(k => v for (k, v) in def if v !== nothing)  # filter out nonfields.
@@ -52,10 +52,10 @@ function argument_names(m::Method)
     return arg_names
 end
 
-
-function argument_types(m::Method)
+argument_types(m::Method) = argument_types(m.sig)
+function argument_types(sig)
     # First parameter of `sig` is the type of the function itself
-    return parameters(m.sig)[2:end]
+    return parameters(sig)[2:end]
 end
 
 name_of_type(x) = x
@@ -74,7 +74,10 @@ function name_of_type(x::UnionAll)
     whereparam = where_parameters(x.var)
     return :($name where $whereparam)
 end
-
+function name_of_type(x::Union)
+    parameter_names = name_of_type.(Base.uniontypes(x))
+    return :(Union{$(parameter_names...)})
+end
 
 function arguments(m::Method)
     arg_names = argument_names(m)
@@ -96,19 +99,18 @@ function where_parameters(x::TypeVar)
     if x.lb === Union{} && x.ub === Any
         return x.name
     elseif x.lb === Union{}
-        return :($(x.name) <: $(Symbol(x.ub)))
+        return :($(x.name) <: $(name_of_type(x.ub)))
     elseif x.ub === Any
-        return :($(x.name) >: $(Symbol(x.lb)))
+        return :($(x.name) >: $(name_of_type(x.lb)))
     else
-        return :($(Symbol(x.lb)) <: $(x.name) <: $(Symbol(x.ub)))
+        return :($(name_of_type(x.lb)) <: $(x.name) <: $(name_of_type(x.ub)))
     end
 end
 
-function where_parameters(m::Method)
-    m.sig isa UnionAll || return nothing
-
+where_parameters(m::Method) = where_parameters(m.sig)
+where_parameters(sig) = nothing
+function where_parameters(sig::UnionAll)
     whereparams = []
-    sig = m.sig
     while sig isa UnionAll
         push!(whereparams, where_parameters(sig.var))
         sig = sig.body
@@ -116,8 +118,9 @@ function where_parameters(m::Method)
     return whereparams
 end
 
-function parameters(m::Method)
-    typeof_type = first(parameters(m.sig))  # will be e.g Type{Foo{P}} if it has any parameters
+type_parameters(m::Method) = type_parameters(m.sig)
+function type_parameters(sig)
+    typeof_type = first(parameters(sig))  # will be e.g Type{Foo{P}} if it has any parameters
     typeof_type <: Type{<:Any} || return nothing
 
     function_type = first(parameters(typeof_type))  # will be e.g. Foo{P}
