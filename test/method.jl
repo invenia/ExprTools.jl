@@ -50,6 +50,14 @@ end
         @test_signature basic4() = 2
     end
 
+    @testset "Tuple{}" begin
+        @test_signature empty_tuple_constraint(x::Tuple{}) = 2
+    end
+
+    @testset "Scope Qualification" begin
+        @test_signature qualified_constraint(x::Base.Threads.SpinLock) = 2
+    end
+
     @testset "missing argnames" begin
         @test_signature ma1(::Int32) = 2x
         @test_signature ma2(::Int32, ::Bool) = 2x
