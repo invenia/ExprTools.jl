@@ -108,11 +108,7 @@ function name_of_type(x::UnionAll)
     end
 
     name = name_of_type(x)
-    if isempty(where_params)
-        return name
-    else
-        return :($name where {$(where_params...)})
-    end
+    return :($name where {$(where_params...)})
 end
 
 function name_of_type(x::Union)
