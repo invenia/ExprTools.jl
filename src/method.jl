@@ -183,12 +183,3 @@ function kwarg_names(m::Method)
     !isdefined(mt, :kwsorter) && return []  # no kwsorter means no keywords for sure.
     return Base.kwarg_decl(m, typeof(mt.kwsorter))
 end
-
-
-#==
-Hard case:
-Base.ReshapedArray{T,N,A,Tuple} where A<:AbstractUnitRange where N where T
-
-MWE:
-ExprTools.name_of_type(Tuple{})
-==#
