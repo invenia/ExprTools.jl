@@ -101,6 +101,8 @@ end
             r"^\QExpr[:(x::(Array{\E(.*?)\Q, 1} where \E\1\Q <: Real))]\E$",
             string(f16_alt_sig[:args])
         )
+
+        @test_signature f_symbol_param(x::Val{:foobar}) where T = 2x
     end
 
     @testset "anon functions" begin

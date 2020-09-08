@@ -78,8 +78,8 @@ function name_of_type(x::Core.TypeName)
     end
 end
 
-name_of_type(x::Symbol) = x  # Literal
-function name_of_type(x::T) where T  # Literal
+name_of_type(x::Symbol) = QuoteNode(x)  # Literal type-param e.g. `Val{:foo}`
+function name_of_type(x::T) where T  # Literal type-param e.g. `Val{1}`
     # it is a bug in our implementation if this error every gets hit.
     isbits(x) || throw(DomainError((x, T), "not a valid type-param"))
     return x
