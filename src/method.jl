@@ -29,12 +29,10 @@ The dictionary of components returned by `signature` match those returned by
 the `:body` component.
 """
 function signature(m::Method)
-    explicit_tvars = ExprTools.extract_tvars(m)
-
     def = Dict{Symbol, Any}()
     def[:name] = m.name
 
-    def[:args] = arguments(m, explicit_tvars)
+    def[:args] = arguments(m)
     def[:whereparams] = where_parameters(m)
     def[:params] = type_parameters(m)
     def[:kwargs] = kwargs(m)
@@ -69,7 +67,7 @@ function name_of_module(m::Module)
         return :($(name_of_module(parentmodule(m))).$(nameof(m)))
     end
 end
-function name_of_type(x::Core.TypeName, _)
+function name_of_type(x::Core.TypeName)
     #TODO: could let user pass this in, then we could be using what is inscope for them
     # but this is not important as we will give a correct (if overly verbose) output as is.
     from = DummyThatHasOnlyDefaultImports
@@ -80,38 +78,36 @@ function name_of_type(x::Core.TypeName, _)
     end
 end
 
-name_of_type(x::Symbol, _) = x  # Literal
-function name_of_type(x::T, _) where T  # Literal
+name_of_type(x::Symbol) = x  # Literal
+function name_of_type(x::T) where T  # Literal
     # it is a bug in our implementation if this error every gets hit.
     isbits(x) || throw(DomainError((x, T), "not a valid type-param"))
     return x
 end
-name_of_type(tv::TypeVar, _) = tv.name
-function name_of_type(x::DataType, explict_tvars=Core.TypeVar[])
-    name = name_of_type(x.name, explict_tvars)
+name_of_type(tv::TypeVar) = tv.name
+function name_of_type(x::DataType)
+    name = name_of_type(x.name)
     # because tuples are varadic in number of type parameters having no parameters does not
     # mean you should not write the `{}`, so we special case them here.
     if isempty(x.parameters) && x != Tuple{}
         return name
     else
-        parameter_names = map(t->name_of_type(t, explict_tvars), x.parameters)
+        parameter_names = map(name_of_type, x.parameters)
         return :($(name){$(parameter_names...)})
     end
 end
 
 
-function name_of_type(x::UnionAll, explict_tvars=Core.TypeVar[])
+function name_of_type(x::UnionAll)
     # we do nested union all unwrapping so we can make the more compact:
     # `foo{T,A} where {T, A}`` rather than the longer: `(foo{T,A} where T) where A`
     where_params = []
     while x isa UnionAll
-        if x.var ∉ explict_tvars
-            push!(where_params, where_parameter1(x.var))
-        end
+        push!(where_params, where_parameter1(x.var))
         x = x.body
     end
 
-    name = name_of_type(x, explict_tvars)
+    name = name_of_type(x)
     if isempty(where_params)
         return name
     else
@@ -119,17 +115,17 @@ function name_of_type(x::UnionAll, explict_tvars=Core.TypeVar[])
     end
 end
 
-function name_of_type(x::Union, explict_tvars=Core.TypeVar[])
-    parameter_names = map(t->name_of_type(t, explict_tvars), Base.uniontypes(x))
+function name_of_type(x::Union)
+    parameter_names = map(name_of_type, Base.uniontypes(x))
     return :(Union{$(parameter_names...)})
 end
 
-function arguments(m::Method, explicit_tvars=Core.TypeVar[])
+function arguments(m::Method)
     arg_names = argument_names(m)
     arg_types = argument_types(m)
     map(arg_names, arg_types) do name, type
         has_name = name !== Symbol("#unused#")
-        type_name = name_of_type(type, explicit_tvars)
+        type_name = name_of_type(type)
         if type === Any && has_name
             name
         elseif has_name
@@ -141,7 +137,6 @@ function arguments(m::Method, explicit_tvars=Core.TypeVar[])
 end
 
 # type-vars can only show up attached to UnionAlls.
-# so when showing name of type for bounds don't need to remove any `explicit_tvars`
 function where_parameter1(x::TypeVar)
     if x.lb === Union{} && x.ub === Any
         return x.name
@@ -165,19 +160,6 @@ function where_parameters(sig::UnionAll)
     return whereparams
 end
 
-# type-space version of where_parameters
-extract_tvars(m::Method) = extract_tvars(m.sig)
-extract_tvars(sig) = Core.TypeVar[]
-function extract_tvars(sig::UnionAll)
-    tvars = Core.TypeVar[]
-    while sig isa UnionAll
-        push!(tvars, sig.var)
-        sig = sig.body
-    end
-    return tvars
-end
-
-
 type_parameters(m::Method) = type_parameters(m.sig)
 function type_parameters(sig)
     typeof_type = first(parameters(sig))  # will be e.g Type{Foo{P}} if it has any parameters
@@ -185,7 +167,7 @@ function type_parameters(sig)
 
     function_type = first(parameters(typeof_type))  # will be e.g. Foo{P}
     parameter_types = parameters(function_type)
-    return [name_of_type(type, Core.TypeVar[]) for type in parameter_types]
+    return map(name_of_type, parameter_types)
 end
 
 function kwargs(m::Method)
