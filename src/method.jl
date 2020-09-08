@@ -58,7 +58,7 @@ function argument_types(sig)
     return parameters(sig)[2:end]
 end
 
-module DummyThatHasOnlyDefaultImports end  # for working out visability
+module DummyThatHasOnlyDefaultImports end  # for working out visibility
 
 function name_of_module(m::Module)
     if Base.is_root_module(m)
@@ -68,7 +68,7 @@ function name_of_module(m::Module)
     end
 end
 function name_of_type(x::Core.TypeName)
-    #TODO: could let user pass this in, then we could be using what is inscope for them
+    # TODO: could let user pass this in, then we could be using what is inscope for them
     # but this is not important as we will give a correct (if overly verbose) output as is.
     from = DummyThatHasOnlyDefaultImports
     if Base.isvisible(x.name, x.module, from)  # avoid qualifying things that are in scope
@@ -80,7 +80,7 @@ end
 
 name_of_type(x::Symbol) = QuoteNode(x)  # Literal type-param e.g. `Val{:foo}`
 function name_of_type(x::T) where T  # Literal type-param e.g. `Val{1}`
-    # it is a bug in our implementation if this error every gets hit.
+    # If this error is thrown, there is an issue with out implementation
     isbits(x) || throw(DomainError((x, T), "not a valid type-param"))
     return x
 end
