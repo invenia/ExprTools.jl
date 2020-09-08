@@ -55,7 +55,7 @@ end
     end
 
     @testset "Scope Qualification" begin
-        @test_signature qualified_constraint(x::Base.Threads.SpinLock) = 2
+        @test_signature qualified_constraint(x::Base.CoreLogging.LogLevel) = 2
     end
 
     @testset "missing argnames" begin
