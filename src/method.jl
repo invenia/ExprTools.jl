@@ -103,7 +103,7 @@ function name_of_type(x::UnionAll)
     # `foo{T,A} where {T, A}`` rather than the longer: `(foo{T,A} where T) where A`
     where_params = []
     while x isa UnionAll
-        push!(where_params, where_parameter1(x.var))
+        push!(where_params, where_constraint(x.var))
         x = x.body
     end
 
@@ -132,8 +132,7 @@ function arguments(m::Method)
     end
 end
 
-# type-vars can only show up attached to UnionAlls.
-function where_parameter1(x::TypeVar)
+function where_constraint(x::TypeVar)
     if x.lb === Union{} && x.ub === Any
         return x.name
     elseif x.lb === Union{}
@@ -150,7 +149,7 @@ where_parameters(sig) = nothing
 function where_parameters(sig::UnionAll)
     whereparams = []
     while sig isa UnionAll
-        push!(whereparams, where_parameter1(sig.var))
+        push!(whereparams, where_constraint(sig.var))
         sig = sig.body
     end
     return whereparams
