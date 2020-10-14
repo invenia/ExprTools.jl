@@ -50,6 +50,14 @@ end
         @test_signature basic4() = 2
     end
 
+    @testset "Tuple{}" begin
+        @test_signature empty_tuple_constraint(x::Tuple{}) = 2
+    end
+
+    @testset "Scope Qualification" begin
+        @test_signature qualified_constraint(x::Base.CoreLogging.LogLevel) = 2
+    end
+
     @testset "missing argnames" begin
         @test_signature ma1(::Int32) = 2x
         @test_signature ma2(::Int32, ::Bool) = 2x
@@ -93,6 +101,8 @@ end
             r"^\QExpr[:(x::(Array{\E(.*?)\Q, 1} where \E\1\Q <: Real))]\E$",
             string(f16_alt_sig[:args])
         )
+
+        @test_signature f_symbol_param(x::Val{:foobar}) where T = 2x
     end
 
     @testset "anon functions" begin

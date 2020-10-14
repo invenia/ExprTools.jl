@@ -58,24 +58,61 @@ function argument_types(sig)
     return parameters(sig)[2:end]
 end
 
-name_of_type(x) = x
-name_of_type(tv::TypeVar) = tv.name
-function name_of_type(x::DataType)
-    name_sym = Symbol(x.name)
-    if isempty(x.parameters)
-        return name_sym
+module DummyThatHasOnlyDefaultImports end  # for working out visibility
+
+function name_of_module(m::Module)
+    if Base.is_root_module(m)
+        return nameof(m)
     else
-        parameter_names = name_of_type.(x.parameters)
-        return :($(name_sym){$(parameter_names...)})
+        return :($(name_of_module(parentmodule(m))).$(nameof(m)))
     end
 end
-function name_of_type(x::UnionAll)
-    name = name_of_type(x.body)
-    whereparam = where_parameters(x.var)
-    return :($name where $whereparam)
+function name_of_type(x::Core.TypeName)
+    # TODO: could let user pass this in, then we could be using what is inscope for them
+    # but this is not important as we will give a correct (if overly verbose) output as is.
+    from = DummyThatHasOnlyDefaultImports
+    if Base.isvisible(x.name, x.module, from)  # avoid qualifying things that are in scope
+        return x.name
+    else
+        return :($(name_of_module(x.module)).$(x.name))
+    end
 end
+
+name_of_type(x::Symbol) = QuoteNode(x)  # Literal type-param e.g. `Val{:foo}`
+function name_of_type(x::T) where T  # Literal type-param e.g. `Val{1}`
+    # If this error is thrown, there is an issue with out implementation
+    isbits(x) || throw(DomainError((x, T), "not a valid type-param"))
+    return x
+end
+name_of_type(tv::TypeVar) = tv.name
+function name_of_type(x::DataType)
+    name = name_of_type(x.name)
+    # because tuples are varadic in number of type parameters having no parameters does not
+    # mean you should not write the `{}`, so we special case them here.
+    if isempty(x.parameters) && x != Tuple{}
+        return name
+    else
+        parameter_names = map(name_of_type, x.parameters)
+        return :($(name){$(parameter_names...)})
+    end
+end
+
+
+function name_of_type(x::UnionAll)
+    # we do nested union all unwrapping so we can make the more compact:
+    # `foo{T,A} where {T, A}`` rather than the longer: `(foo{T,A} where T) where A`
+    where_params = []
+    while x isa UnionAll
+        push!(where_params, where_constraint(x.var))
+        x = x.body
+    end
+
+    name = name_of_type(x)
+    return :($name where {$(where_params...)})
+end
+
 function name_of_type(x::Union)
-    parameter_names = name_of_type.(Base.uniontypes(x))
+    parameter_names = map(name_of_type, Base.uniontypes(x))
     return :(Union{$(parameter_names...)})
 end
 
@@ -95,7 +132,7 @@ function arguments(m::Method)
     end
 end
 
-function where_parameters(x::TypeVar)
+function where_constraint(x::TypeVar)
     if x.lb === Union{} && x.ub === Any
         return x.name
     elseif x.lb === Union{}
@@ -112,7 +149,7 @@ where_parameters(sig) = nothing
 function where_parameters(sig::UnionAll)
     whereparams = []
     while sig isa UnionAll
-        push!(whereparams, where_parameters(sig.var))
+        push!(whereparams, where_constraint(sig.var))
         sig = sig.body
     end
     return whereparams
@@ -125,7 +162,7 @@ function type_parameters(sig)
 
     function_type = first(parameters(typeof_type))  # will be e.g. Foo{P}
     parameter_types = parameters(function_type)
-    return [name_of_type(type) for type in parameter_types]
+    return map(name_of_type, parameter_types)
 end
 
 function kwargs(m::Method)
