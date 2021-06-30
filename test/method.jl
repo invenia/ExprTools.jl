@@ -234,4 +234,43 @@ end
             only_method(OneParamStruct{Float32}, Tuple{Float32, Bool})
         )
     end
+
+    @testset "signature(type_tuple)" begin
+        # our tests here are much less comprehensive than for `signature(::Method)`
+        # but that is OK, as most of the code is shared between the two
+
+        @test signature(Tuple{typeof(+), Float32, Float32}) == Dict(
+            :name => :(op::typeof(+)),
+            :args => Expr[:(x1::Float32), :(x2::Float32)],
+        )
+
+        @test signature(Tuple{typeof(+), Array}) == Dict(
+            :name => :(op::typeof(+)),
+            :args => Expr[:(x1::(Array{T, N} where {T, N}))],
+        )
+
+        @test signature(Tuple{typeof(+), Vector{T}, Matrix{T}} where T<:Real) == Dict(
+            :name => :(op::typeof(+)),
+            :args => Expr[:(x1::Array{T, 1}), :(x2::Array{T, 2})],
+            :whereparams => Any[:(T <: Real)],
+        )
+
+        @testset "hygienic_unionalls" begin
+            no_hygiene = signature(Tuple{typeof(+),T,Array} where T)
+            @test no_hygiene == Dict(
+                :name => :(op::typeof(+)),
+                :args => Expr[:(x1::T), :(x2::(Array{T, N} where {T, N}))],
+                :whereparams => Any[:T],
+            )
+            hygiene = signature(Tuple{typeof(+),T,Array} where T; hygienic_unionalls=true)
+            @test no_hygiene[:name] == hygiene[:name]
+            @test length(no_hygiene[:args]) == 2
+            @test no_hygiene[:args][2] == hygiene[:args][2]
+            
+            @test length(no_hygiene[:whereparams]) == 1
+            @test no_hygiene[:whereparams] != hygiene[:whereparams]
+            # very coarse test to make sure the renamed arg is in the expression it should be
+            @test occursin(string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1]))
+        end
+    end
 end
