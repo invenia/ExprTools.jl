@@ -1,8 +1,10 @@
 module ExprTools
 
-export signature, splitdef, combinedef, parameters
+export args_tuple_expr, combinedef, parameters, signature, splitdef
 
 include("function.jl")
 include("method.jl")
 include("type_utils.jl")
-end
+include("def_tools.jl")
+
+end  # module
