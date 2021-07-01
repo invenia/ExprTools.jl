@@ -269,7 +269,7 @@ end
             @test no_hygiene[:name] == hygiene[:name]
             @test length(no_hygiene[:args]) == 2
             @test no_hygiene[:args][1] != hygiene[:args][1] # different Symbols
-            @test no_hygiene[:arg s][2] == hygiene[:args][2]
+            @test no_hygiene[:args][2] == hygiene[:args][2]
             
             @test length(no_hygiene[:whereparams]) == 1
             @test no_hygiene[:whereparams] != hygiene[:whereparams]  # different Symbols
