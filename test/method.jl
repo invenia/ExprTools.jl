@@ -268,10 +268,11 @@ end
             hygiene = signature(Tuple{typeof(+),T,Array} where T; extra_hygiene=true)
             @test no_hygiene[:name] == hygiene[:name]
             @test length(no_hygiene[:args]) == 2
-            @test no_hygiene[:args][2] == hygiene[:args][2]
+            @test no_hygiene[:args][1] != hygiene[:args][1] # different Symbols
+            @test no_hygiene[:arg s][2] == hygiene[:args][2]
             
             @test length(no_hygiene[:whereparams]) == 1
-            @test no_hygiene[:whereparams] != hygiene[:whereparams]
+            @test no_hygiene[:whereparams] != hygiene[:whereparams]  # different Symbols
             # very coarse test to make sure the renamed arg is in the expression it should be
             @test occursin(string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1]))
         end
