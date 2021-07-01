@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · ExprTools.jl</title><script data-outdated-warner src="assets/warner.js"></script><link rel="canonical" href="https://invenia.github.io/ExprTools.jl/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>ExprTools.jl</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a></li><li><a class="tocitem" href="api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/invenia/ExprTools.jl/blob/master/docs/src/index.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="ExprTools"><a class="docs-heading-anchor" href="#ExprTools">ExprTools</a><a id="ExprTools-1"></a><a class="docs-heading-anchor-permalink" href="#ExprTools" title="Permalink"></a></h1><p>ExprTools provides tooling for working with Julia expressions during <a href="https://docs.julialang.org/en/v1/manual/metaprogramming/">metaprogramming</a>. This package aims to provide light-weight performant tooling without requiring additional package dependencies.</p><p>Alternatively see the <a href="https://github.com/MikeInnes/MacroTools.jl">MacroTools</a> package for more powerful set of tools.</p><p>ExprTools provides tooling for working with Julia expressions during <a href="https://docs.julialang.org/en/v1/manual/metaprogramming/">metaprogramming</a>. This package aims to provide light-weight performant tooling without requiring additional package dependencies.</p><p>Alternatively see the <a href="https://github.com/MikeInnes/MacroTools.jl">MacroTools</a> package for more powerful set of tools.</p><p>Currently, this package provides the <code>splitdef</code>, <code>signature</code> and <code>combinedef</code> functions which are useful for inspecting and manipulating function definition expressions.</p><ul><li><a href="api/#ExprTools.splitdef"><code>splitdef</code></a> works on a function definition expression and returns a <code>Dict</code> of its parts.</li><li><a href="api/#ExprTools.combinedef"><code>combinedef</code></a> takes <code>Dict</code> from <code>splitdef</code> and builds it into an expression.</li><li><a href="api/#ExprTools.signature"><code>signature</code></a> works on a <code>Method</code> returning a similar <code>Dict</code> that holds the parts of the expressions that would form its signature.</li></ul><p>e.g.</p><pre><code class="language-julia-repl">julia&gt; using ExprTools
+
+julia&gt; ex = :(
+           function Base.f(x::T, y::T) where T
+               x + y
+           end
+       )
+:(function Base.f(x::T, y::T) where T
+      #= none:3 =#
+      x + y
+  end)
+
+julia&gt; def = splitdef(ex)
+Dict{Symbol,Any} with 5 entries:
+  :args        =&gt; Any[:(x::T), :(y::T)]
+  :body        =&gt; quote…
+  :name        =&gt; :(Base.f)
+  :head        =&gt; :function
+  :whereparams =&gt; Any[:T]
+
+julia&gt; def[:name] = :g;
+
+julia&gt; def[:head] = :(=);
+
+julia&gt; def[:body] = :(x * y);
+
+julia&gt; g_expr = combinedef(def)
+:((g(x::T, y::T) where T) = x * y)
+
+julia&gt; eval(g_expr)
+g (generic function with 1 method)
+
+julia&gt; g_method = first(methods(g))
+g(x::T, y::T) where T in Main
+
+julia&gt; signature(g_method)
+Dict{Symbol,Any} with 3 entries:
+  :name        =&gt; :g
+  :args        =&gt; Expr[:(x::T), :(y::T)]
+  :whereparams =&gt; Any[:T]</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Thursday 1 July 2021 17:56">Thursday 1 July 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
