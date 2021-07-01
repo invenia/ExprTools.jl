@@ -13,7 +13,7 @@ Alternatively see the [MacroTools](https://github.com/MikeInnes/MacroTools.jl) p
 Currently, this package provides the `splitdef`, `signature` and `combinedef` functions which are useful for inspecting and manipulating function definition expressions.
  - `splitdef` works on a function definition expression and returns a `Dict` of its parts.
  - `combinedef` takes a `Dict` from `splitdef` and builds it into an expression.
- - `signature` works on a `Method` returning a similar `Dict` that holds the parts of the expressions that would form its signature.
+ - `signature` works on a `Method`, or the type-tuple `sig` field of a method, returning a similar `Dict` that holds the parts of the expressions that would form its signature.
 
 As well as several helpers that are useful in combination with them.
  - `args_tuple_expr` applies to a `Dict` from `splitdef` or `signature` to generate an expression for a tuple of its arguments.

@@ -37,8 +37,62 @@ function signature(m::Method)
     def[:params] = type_parameters(m)
     def[:kwargs] = kwargs(m)
 
-    return Dict(k => v for (k, v) in def if v !== nothing)  # filter out nonfields.
+    return filter!(kv->last(kv)!==nothing, def)  # filter out nonfields.
 end
+
+
+"""
+    signature(sig::Type{<:Tuple})
+
+Like `ExprTools.signature(::Method)` but on the underlying signature type-tuple, rather than
+the Method`.
+For `sig` being a tuple-type representing a methods type signature, this generates a
+dictionary that can be passes to `ExprTools.combinedef` to define that function,
+Provided that you assign the `:body` key on the dictionary first.
+
+The quality of the output, in terms of matching names etc is not as high as for the
+`signature(::Method)`, but all the key information is present; and the type-tuple is for
+other purposes generally easier to manipulate.
+
+Examples
+```julia
+julia> signature(Tuple{typeof(identity), Any})
+Dict{Symbol, Any} with 2 entries:
+  :name => :(op::typeof(identity))
+  :args => Expr[:(x1::Any)]
+
+julia> signature(Tuple{typeof(+), Vector{T}, Vector{T}} where T<:Number)
+Dict{Symbol, Any} with 3 entries:
+  :name        => :(op::typeof(+))
+  :args        => Expr[:(x1::Array{var"##T#5492", 1}), :(x2::Array{var"##T#5492", 1})]
+  :whereparams => Any[:(var"##T#5492" <: Number)]
+```
+
+# keywords
+
+ - `extra_hygiene=false`: if set to `true` this forces name-hygine on the `TypeVar`s in 
+   `UnionAll`s, regenerating each with a unique name via `gensym`. This shouldn't actually
+   be required as they are scoped such that they are not supposed to leak. However, there is
+   a long-standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
+   they do leak if they clash with function type-vars.
+"""
+function signature(orig_sig::Type{<:Tuple}; extra_hygiene=false)
+    sig = extra_hygiene ? _truly_rename_unionall(orig_sig) : orig_sig
+    def = Dict{Symbol, Any}()
+
+    opT = parameters(sig)[1]
+    def[:name] = :(op::$opT)
+
+    arg_types = name_of_type.(argument_types(sig))
+    arg_names = [Symbol(:x, ii) for ii in eachindex(arg_types)]
+    def[:args] = Expr.(:(::), arg_names, arg_types)
+    def[:whereparams] = where_parameters(sig)
+
+    filter!(kv->last(kv)!==nothing, def)  # filter out nonfields.
+    return def
+end
+
+
 
 function slot_names(m::Method)
     ci = Base.uncompressed_ast(m)
@@ -177,4 +231,40 @@ function kwarg_names(m::Method)
     mt = Base.get_methodtable(m)
     !isdefined(mt, :kwsorter) && return []  # no kwsorter means no keywords for sure.
     return Base.kwarg_decl(m, typeof(mt.kwsorter))
+end
+
+
+
+"""
+    _truly_rename_unionall(@nospecialize(u))
+
+For `u` being a `UnionAll` this replaces every `TypeVar` with  a new one with a `gensym`ed
+names.
+This shouldn't actually be required as they are scoped such that they are not supposed to leak. However, there is
+a long standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
+they do leak if they clash with function type-vars.
+
+Example:
+```julia
+julia> _truly_rename_unionall(Array{T, N} where {T<:Number, N})
+Array{var"##T#2881", var"##N#2880"} where var"##N#2880" where var"##T#2881"<:Number
+```
+
+Note that the similar `Base.rename_unionall`, though `Base.rename_unionall` does not
+`gensym` the names just replaces the instances with new instances with identical names.
+"""
+function _truly_rename_unionall(@nospecialize(u))
+    # This works by recursively unwrapping UnionAlls to seperate the TypeVars from body
+    # changing the name in the TypeVar, and then  rewrapping it back up.
+    # The code is basically the same as `Base.rename_unionall`, but with gensym added
+    isa(u, UnionAll) || return u
+    body = _truly_rename_unionall(u.body)
+    if body === u.body
+        body = u
+    else
+        body = UnionAll(u.var, body)
+    end
+    var = u.var::TypeVar
+    nv = TypeVar(gensym(var.name), var.lb, var.ub)
+    return UnionAll(nv, body{nv})
 end
