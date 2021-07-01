@@ -7,12 +7,12 @@
     args_tuple_expr(signature_def::Dict{Symbol})
     args_tuple_expr(arg_exprs)
 
-For `arg_exprs` being a list of arguments expressions from a signature, of a form
+For `arg_exprs` being a list of positional argument expressions from a signature, of a form
 such as `[:(x::Int), :(y::Float64), :(z::Vararg)]`, or being a whole signature_def `Dict`
 containing a `signature_def[:args]` value of that form.
 
-This returns a tuple expresion containing all of the args by name; while correctly handling
-splatting, for things that are `Vararg` typed. e.g for the prior example `:((x, y, z...))`
+This returns a tuple expresion containing all of the args by name. It correctly handles
+splatting for things that are `Vararg` typed, e.g for the prior example `:((x, y, z...))`
 
 This is useful for modifiying the `signature_def[:body]`.
 For example, one could printout all the arguments via
@@ -25,8 +25,8 @@ signature_def[:body] = quote
 end
 ```
 
-A more realistic use case is if you want to insert a call to a another function
-that accepts same argument as the original function.
+A more realistic use case is if you want to insert a call to another function
+that accepts the same arguments as the original function.
 """
 function args_tuple_expr end
 
@@ -35,7 +35,6 @@ args_tuple_expr(signature_def::Dict{Symbol}) = args_tuple_expr(signature_def[:ar
 function args_tuple_expr(arg_exprs)
     ret = Expr(:tuple)
     ret.args = map(arg_exprs) do arg
-        arg isa Symbol && return arg  # it is just `x` not `x::T`
 
         # remove splatting (will put back on at end)
         was_splatted = Meta.isexpr(arg, :(...), 1)
@@ -43,7 +42,7 @@ function args_tuple_expr(arg_exprs)
             arg = arg.args[1]
         end
 
-        # handle presence or absense of type constrantain
+        # handle presence or absence of type constraints
         if Meta.isexpr(arg, :(::), 2)
             arg_name, Texpr = arg.args
         elseif arg isa Symbol
@@ -54,7 +53,7 @@ function args_tuple_expr(arg_exprs)
         end
 
         # Clean up types so we can recognise if it is `Vararg`
-        # remove where clauses (because the interfere with recongnizing Vararg)
+        # remove where clauses (because they interfere with recognizing Vararg)
         if Meta.isexpr(Texpr, :where)
             Texpr = Texpr.args[1]
         end

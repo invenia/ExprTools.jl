@@ -14,7 +14,7 @@ Currently, this package provides the `splitdef`, `signature` and `combinedef` fu
  - `splitdef` works on a function definition expression and returns a `Dict` of its parts.
  - `combinedef` takes a `Dict` from `splitdef` and builds it into an expression.
  - `signature` works on a `Method` returning a similar `Dict` that holds the parts of the expressions that would form its signature.
- - `args_tuple_expr` applies to a `Dict` from `splitdef` or `signature` to generate a expression for a tuple of it's arguments.
+ - `args_tuple_expr` applies to a `Dict` from `splitdef` or `signature` to generate an expression for a tuple of its arguments.
 
 e.g.
 ```julia
