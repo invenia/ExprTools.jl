@@ -70,14 +70,14 @@ Dict{Symbol, Any} with 3 entries:
 
 # keywords
 
- - `hygienic_unionalls=false`: if set to `true` this forces name-hygine on the `TypeVar`s in 
+ - `extra_hygiene=false`: if set to `true` this forces name-hygine on the `TypeVar`s in 
    `UnionAll`s, regenerating each with a unique name via `gensym`. This shouldn't actually
    be required as they are scoped such that they are not supposed to leak. However, there is
    a long-standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
    they do leak if they clash with function type-vars.
 """
-function signature(orig_sig::Type{<:Tuple}; hygienic_unionalls=false)
-    sig = hygienic_unionalls ? _truly_rename_unionall(orig_sig) : orig_sig
+function signature(orig_sig::Type{<:Tuple}; extra_hygiene=false)
+    sig = extra_hygiene ? _truly_rename_unionall(orig_sig) : orig_sig
     def = Dict{Symbol, Any}()
 
     opT = parameters(sig)[1]
@@ -254,6 +254,9 @@ Note that the similar `Base.rename_unionall`, though `Base.rename_unionall` does
 `gensym` the names just replaces the instances with new instances with identical names.
 """
 function _truly_rename_unionall(@nospecialize(u))
+    # This works by recursively unwrapping UnionAlls to seperate the TypeVars from body
+    # changing the name in the TypeVar, and then  rewrapping it back up.
+    # The code is basically the same as `Base.rename_unionall`, but with gensym added
     isa(u, UnionAll) || return u
     body = _truly_rename_unionall(u.body)
     if body === u.body

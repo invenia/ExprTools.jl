@@ -258,14 +258,14 @@ end
             :whereparams => Any[:(T <: Real)],
         )
 
-        @testset "hygienic_unionalls" begin
+        @testset "extra_hygiene" begin
             no_hygiene = signature(Tuple{typeof(+),T,Array} where T)
             @test no_hygiene == Dict(
                 :name => :(op::$(typeof(+))),
                 :args => Expr[:(x1::T), :(x2::(Array{T, N} where {T, N}))],
                 :whereparams => Any[:T],
             )
-            hygiene = signature(Tuple{typeof(+),T,Array} where T; hygienic_unionalls=true)
+            hygiene = signature(Tuple{typeof(+),T,Array} where T; extra_hygiene=true)
             @test no_hygiene[:name] == hygiene[:name]
             @test length(no_hygiene[:args]) == 2
             @test no_hygiene[:args][2] == hygiene[:args][2]
