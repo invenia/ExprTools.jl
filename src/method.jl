@@ -51,7 +51,7 @@ dictionary that can be passes to `ExprTools.combinedef` to define that function,
 Provided that you assign the `:body` key on the dictionary first.
 
 The quality of the output, in terms of matching names etc is not as high as for the
-`signature(::Method`; but all the key information is present; and the type-typle is for
+`signature(::Method)`, but all the key information is present; and the type-tuple is for
 other purposes generally easier to manipulate.
 
 Examples
@@ -72,8 +72,8 @@ Dict{Symbol, Any} with 3 entries:
 
  - `hygienic_unionalls=false`: if set to `true` this forces name-hygine on the `TypeVar`s in 
    `UnionAll`s, regenerating each with a unique name via `gensym`. This shouldn't actually
-   be requires as they are scoped such that they are not supposed to leak. However, there is
-   a long standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
+   be required as they are scoped such that they are not supposed to leak. However, there is
+   a long-standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
    they do leak if they clash with function type-vars.
 """
 function signature(orig_sig::Type{<:Tuple}; hygienic_unionalls=false)
@@ -254,7 +254,7 @@ Note that the similar `Base.rename_unionall`, though `Base.rename_unionall` does
 `gensym` the names just replaces the instances with new instances with identical names.
 """
 function _truly_rename_unionall(@nospecialize(u))
-    isa(u,UnionAll) || return u
+    isa(u, UnionAll) || return u
     body = _truly_rename_unionall(u.body)
     if body === u.body
         body = u
