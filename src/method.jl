@@ -100,7 +100,6 @@ end
 function argument_names(m::Method)
     slot_syms = slot_names(m)
     # nargs includes 1 for `#self#` or the function object name;
-    # TODO: could support option to return function object argument name/type
     arg_names = slot_syms[2:m.nargs]
     return arg_names
 end

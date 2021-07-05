@@ -118,10 +118,10 @@ struct TestCallableStruct end
 
     @testset "callable structs" begin
         ms = collect(methods(TestCallableStruct()))
-        sig1 = signature(filter(m -> m.nargs == 2, ms) |> first)
+        sig1 = signature(first(filter(m -> m.nargs == 2, ms)))
         @test sig1[:name] == :TestCallableStruct
         @test sig1[:args] == [:x]
-        sig2 = signature(filter(m -> m.nargs == 3, ms) |> first)
+        sig2 = signature(first(filter(m -> m.nargs == 3, ms)))
         @test sig2[:name] == :TestCallableStruct
         @test sig2[:args] == Expr[:(x::T),:(y::R)]
     end
