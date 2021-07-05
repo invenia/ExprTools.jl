@@ -92,8 +92,6 @@ function signature(orig_sig::Type{<:Tuple}; extra_hygiene=false)
     return def
 end
 
-
-
 function slot_names(m::Method)
     ci = Base.uncompressed_ast(m)
     return ci.slotnames
@@ -101,8 +99,8 @@ end
 
 function argument_names(m::Method)
     slot_syms = slot_names(m)
-    @assert slot_syms[1] === Symbol("#self#")
-    arg_names = slot_syms[2:m.nargs]  # nargs includes 1 for `#self#`
+    # nargs includes 1 for `#self#` or the function object name;
+    arg_names = slot_syms[2:m.nargs]
     return arg_names
 end
 

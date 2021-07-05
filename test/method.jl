@@ -42,6 +42,10 @@ function only_method(f, typ=Tuple{Vararg{Any}})
     return first(ms)
 end
 
+struct TestCallableStruct end
+(self::TestCallableStruct)(x) = 2x
+(self::TestCallableStruct)(x::T,y::R) where {T,R} = 2x + y
+
 @testset "method.jl: signature" begin
     @testset "Basics" begin
         @test_signature basic1(x) = 2x
@@ -110,6 +114,16 @@ end
         @test_signature (x) -> 2x
 
         @test_signature ((::T) where T) -> 0   # Anonymous parameter
+    end
+
+    @testset "callable structs" begin
+        ms = collect(methods(TestCallableStruct()))
+        sig1 = signature(first(filter(m -> m.nargs == 2, ms)))
+        @test sig1[:name] == :TestCallableStruct
+        @test sig1[:args] == [:x]
+        sig2 = signature(first(filter(m -> m.nargs == 3, ms)))
+        @test sig2[:name] == :TestCallableStruct
+        @test sig2[:args] == Expr[:(x::T),:(y::R)]
     end
 
     @testset "vararg" begin
