@@ -30,7 +30,7 @@ the `:body` component.
 
 # keywords
 
- - `extra_hygiene=false`: if set to `true` this forces name-hygine on the `TypeVar`s in 
+ - `extra_hygiene=false`: if set to `true` this forces name-hygiene on the `TypeVar`s in 
    `UnionAll`s, regenerating each with a unique name via `gensym`. This shouldn't actually
    be required as they are scoped such that they are not supposed to leak. However, there is
    a long-standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
