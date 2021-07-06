@@ -58,6 +58,10 @@ struct TestCallableStruct end
         @test_signature empty_tuple_constraint(x::Tuple{}) = 2
     end
 
+    @testset "varadic Tuple" begin
+        @test_signature vt1(::Tuple{Vararg{Int64, N}}) where N = 2
+    end
+
     @testset "Scope Qualification" begin
         @test_signature qualified_constraint(x::Base.CoreLogging.LogLevel) = 2
     end
