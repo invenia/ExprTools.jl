@@ -27,13 +27,23 @@ with [`CodeTracking.definition`](https://github.com/timholy/CodeTracking.jl).
 The dictionary of components returned by `signature` match those returned by
 [`splitdef`](@ref) and include all that are required by [`combinedef`](@ref), except for
 the `:body` component.
+
+# keywords
+
+ - `extra_hygiene=false`: if set to `true` this forces name-hygine on the `TypeVar`s in 
+   `UnionAll`s, regenerating each with a unique name via `gensym`. This shouldn't actually
+   be required as they are scoped such that they are not supposed to leak. However, there is
+   a long-standing [julia bug](https://github.com/JuliaLang/julia/issues/39876) that means 
+   they do leak if they clash with function type-vars.
 """
-function signature(m::Method)
+function signature(m::Method; extra_hygiene=false)
+    sig = extra_hygiene ? _truly_rename_unionall(m.sig) : m.sig
+
     def = Dict{Symbol, Any}()
     def[:name] = m.name
 
-    def[:args] = arguments(m)
-    def[:whereparams] = where_parameters(m)
+    def[:args] = arguments(m, sig)
+    def[:whereparams] = where_parameters(sig)
     def[:params] = type_parameters(m)
     def[:kwargs] = kwargs(m)
 
@@ -168,9 +178,9 @@ function name_of_type(x::Union)
     return :(Union{$(parameter_names...)})
 end
 
-function arguments(m::Method)
+function arguments(m::Method, sig=m.sig)
     arg_names = argument_names(m)
-    arg_types = argument_types(m)
+    arg_types = argument_types(sig)
     map(arg_names, arg_types) do name, type
         has_name = name !== Symbol("#unused#")
         type_name = name_of_type(type)
