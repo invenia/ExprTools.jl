@@ -249,6 +249,26 @@ struct TestCallableStruct end
         )
     end
 
+    @testset "extra_hygiene" begin
+        hy1(::T,::Array) where T = 2
+        no_hygiene = signature(only_method(hy1))
+        @test no_hygiene == Dict(
+            :name => :hy1,
+            :args => Expr[:(::T), :(::(Array{T, N} where {T, N}))],
+            :whereparams => Any[:T],
+        )
+        hygiene = signature(only_method(hy1); extra_hygiene=true)
+        @test no_hygiene[:name] == hygiene[:name]
+        @test length(no_hygiene[:args]) == 2
+        @test no_hygiene[:args][1] != hygiene[:args][1] # different Symbols
+        @test no_hygiene[:args][2] == hygiene[:args][2]
+        
+        @test length(no_hygiene[:whereparams]) == 1
+        @test no_hygiene[:whereparams] != hygiene[:whereparams]  # different Symbols
+        # very coarse test to make sure the renamed arg is in the expression it should be
+        @test occursin(string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1]))
+    end
+
     @testset "signature(type_tuple)" begin
         # our tests here are much less comprehensive than for `signature(::Method)`
         # but that is OK, as most of the code is shared between the two
