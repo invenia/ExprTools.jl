@@ -69,3 +69,8 @@ Dict{Symbol, Any} with 3 entries:
   :args        => Expr[:(x::T), :(y::T)]
   :whereparams => Any[:T]
 ```
+
+### JuliaCon 2021 Video
+"ExprTools: Metaprogramming from reflection" by Lyndon White
+
+[![YouTube Video](https://img.youtube.com/vi/CREWoLxpDMo/0.jpg)](https://www.youtube.com/watch?v=CREWoLxpDMo)
