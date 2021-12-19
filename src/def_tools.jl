@@ -8,7 +8,7 @@
     args_tuple_expr(arg_exprs)
 
 For `arg_exprs` being a list of positional argument expressions from a signature, of a form
-such as `[:(x::Int), :(y::Float64), :(z::Vararg)]`, or being a whole signature_def `Dict`
+such as `[:(x::Int), :(y::Float64), :(z::Vararg)]`, or being a whole `signature_def` `Dict`
 containing a `signature_def[:args]` value of that form.
 
 This returns a tuple expresion containing all of the args by name. It correctly handles
