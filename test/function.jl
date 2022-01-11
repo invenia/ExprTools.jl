@@ -844,6 +844,7 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
         # Too few expression arguments
         @test_splitdef_invalid Expr(:function)
         @test_splitdef_invalid Expr(:(=), :f)
+        @test_splitdef_invalid Expr(:function, :(f(x)))
 
         # Too many expression arguments
         @test_splitdef_invalid Expr(:function, :f, :x, :y)

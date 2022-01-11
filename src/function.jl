@@ -39,7 +39,8 @@ function splitdef(ex::Expr; throw::Bool=true)
 
     def[:head] = ex.head
 
-    if ex.head === :function && length(ex.args) == 1  # empty function definition
+    if ex.head === :function && length(ex.args) == 1 && ex.args[1] isa Symbol
+        # empty function definition
         def[:name] = ex.args[1]
         return def
     elseif length(ex.args) == 2  # Expect signature and body
