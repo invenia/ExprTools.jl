@@ -14,7 +14,7 @@
         # Tuple with varadic Vararg
         a, b = collect(parameters(Tuple{Int8, Vararg{Bool}}))
         @test a == Int8
-        @test b <: Vararg{Bool}
+        @test b == Vararg{Bool}
 
         # TypeVar
         tvar1 = parameters(Tuple{T} where T<:Number)[1]
