@@ -7,7 +7,6 @@
 
         # Tuple
         @test collect(parameters(Tuple{Int8,Bool})) == [Int8, Bool]
-        
         # Tuple with fixed count Vararg
         @test collect(parameters(Tuple{Int8,Vararg{Bool,3}})) == [Int8, Bool, Bool, Bool]
 
@@ -42,12 +41,11 @@
         # Union
         @test Set(parameters(Union{Int8,Bool})) == Set([Int8, Bool])
         @test Set(parameters(Union{Int8,Bool,Set})) == Set([Int8, Bool, Set])
-        
         # Partially collapsing Union
         @test Set(parameters(Union{Int8,Real,Set})) == Set([Real, Set])
 
         # Unions with type-vars
-        umem1, umem2 = parameters(Union{Tuple{Z},Set{Z}} where Z)
+        umem1, umem2 = parameters(Union{Tuple{Z},Set{Z}} where {Z})
         utvar1 = parameters(umem1)[1]
         utvar2 = parameters(umem2)[1]
         @test utvar1 == utvar2
