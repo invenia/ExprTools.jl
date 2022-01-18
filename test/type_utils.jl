@@ -12,12 +12,12 @@
         @test collect(parameters(Tuple{Int8, Vararg{Bool, 3}})) == [Int8, Bool, Bool, Bool]
 
         # Tuple with varadic Vararg
-        a, b = collect(parameters(Tuple{Int8, Vararg{Bool}}))
+        a, b = collect(parameters(Tuple{Int8,Vararg{Bool}}))
         @test a == Int8
         @test b == Vararg{Bool}
 
         # TypeVar
-        tvar1 = parameters(Tuple{T} where T<:Number)[1]
+        tvar1 = parameters(Tuple{T} where {T<:Number})[1]
         @test tvar1 isa TypeVar
         @test tvar1.name == :T
         @test tvar1.lb == Union{}

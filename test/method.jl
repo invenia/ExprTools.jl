@@ -59,8 +59,8 @@ struct TestCallableStruct end
     end
 
     @testset "varadic Tuple" begin
-        @test_signature vt1(::Tuple{Vararg{Int64, N}}) where N = 2
-        VERSION >= v"1.7" && @test_signature vt2(::Tuple{Vararg{Int64}})= 2
+        @test_signature vt1(::Tuple{Vararg{Int64,N}}) where {N} = 2
+        VERSION >= v"1.7" && @test_signature vt2(::Tuple{Vararg{Int64}}) = 2
     end
 
     @testset "Scope Qualification" begin
@@ -139,29 +139,23 @@ struct TestCallableStruct end
             f17_alt(xs...) = 2
             test_matches(
                 signature(only_method(f17_alt)),
-                Dict(
-                    :name => :f17_alt,
-                    :args => [:(xs::Vararg{Any})]
-                )
+                Dict(:name => :f17_alt, :args => [:(xs::Vararg{Any})]),
             )
 
             @test_signature f18(xs::Vararg{Int64}) = 2
             @test_signature f19(x, xs::Vararg{Any}) = 2x
         else
-            @test_signature f17(xs::Vararg{Any, N} where N) = 2
-                    # `f17_alt(xs...) = 2` lowers to the same method as `f18`
+            @test_signature f17(xs::Vararg{Any,N} where {N}) = 2
+            # `f17_alt(xs...) = 2` lowers to the same method as `f18`
             # but has a different AST according to `splitdef` so we can't us @test_signature
             f17_alt(xs...) = 2
             test_matches(
                 signature(only_method(f17_alt)),
-                Dict(
-                    :name => :f17_alt,
-                    :args => [:(xs::(Vararg{Any, N} where N))]
-                )
+                Dict(:name => :f17_alt, :args => [:(xs::(Vararg{Any,N} where {N}))]),
             )
 
-            @test_signature f18(xs::Vararg{Int64, N} where N) = 2
-            @test_signature f19(x, xs::Vararg{Any, N} where N) = 2x
+            @test_signature f18(xs::Vararg{Int64,N} where {N}) = 2
+            @test_signature f19(x, xs::Vararg{Any,N} where {N}) = 2x
         end
     end
 
