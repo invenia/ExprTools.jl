@@ -1,15 +1,15 @@
 @testset "type_utils.jl" begin
     @testset "parameters" begin
         # basic case
-        @test collect(parameters(AbstractArray{Float32, 3})) == [Float32, 3]
+        @test collect(parameters(AbstractArray{Float32,3})) == [Float32, 3]
         # Type-alias
         @test collect(parameters(Vector{Float64})) == [Float64, 1]
 
         # Tuple
-        @test collect(parameters(Tuple{Int8, Bool})) == [Int8, Bool]
+        @test collect(parameters(Tuple{Int8,Bool})) == [Int8, Bool]
         
         # Tuple with fixed count Vararg
-        @test collect(parameters(Tuple{Int8, Vararg{Bool, 3}})) == [Int8, Bool, Bool, Bool]
+        @test collect(parameters(Tuple{Int8,Vararg{Bool,3}})) == [Int8, Bool, Bool, Bool]
 
         # Tuple with varadic Vararg
         a, b = collect(parameters(Tuple{Int8,Vararg{Bool}}))
@@ -40,14 +40,14 @@
         @test tvar4.ub == Real
 
         # Union
-        @test Set(parameters(Union{Int8, Bool})) == Set([Int8, Bool])
-        @test Set(parameters(Union{Int8, Bool, Set})) == Set([Int8, Bool, Set])
+        @test Set(parameters(Union{Int8,Bool})) == Set([Int8, Bool])
+        @test Set(parameters(Union{Int8,Bool,Set})) == Set([Int8, Bool, Set])
         
         # Partially collapsing Union
-        @test Set(parameters(Union{Int8, Real, Set})) == Set([Real, Set])
+        @test Set(parameters(Union{Int8,Real,Set})) == Set([Real, Set])
 
         # Unions with type-vars
-        umem1, umem2 = parameters(Union{Tuple{Z}, Set{Z}} where Z)
+        umem1, umem2 = parameters(Union{Tuple{Z},Set{Z}} where Z)
         utvar1 = parameters(umem1)[1]
         utvar2 = parameters(umem2)[1]
         @test utvar1 == utvar2
