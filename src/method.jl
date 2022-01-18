@@ -142,7 +142,7 @@ end
 
 name_of_type(x::Symbol) = QuoteNode(x)  # Literal type-param e.g. `Val{:foo}`
 function name_of_type(x::T) where T  # Literal type-param e.g. `Val{1}`
-    # If this error is thrown, there is an issue with out implementation
+    # If this error is thrown, there is an issue with our implementation
     isbits(x) || throw(DomainError((x, T), "not a valid type-param"))
     return x
 end
@@ -177,6 +177,19 @@ function name_of_type(x::Union)
     parameter_names = map(name_of_type, Base.uniontypes(x))
     return :(Union{$(parameter_names...)})
 end
+
+# Vararg was changed not to be a type anymore in Julia 1.7
+if isdefined(Core, :TypeofVararg)
+    function name_of_type(x::Core.TypeofVararg)
+        of_T = name_of_type(x.T)
+        if isdefined(x, :N)
+            :(Vararg{$of_T, $(name_of_type(x.N))})
+        else
+            :(Vararg{$of_T})
+        end
+    end
+end
+
 
 function arguments(m::Method, sig=m.sig)
     arg_names = argument_names(m)
