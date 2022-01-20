@@ -323,10 +323,11 @@ struct TestCallableStruct end
             @test length(no_hygiene[:whereparams]) == 1
             @test no_hygiene[:whereparams] != hygiene[:whereparams]  # different Symbols
             # very coarse test to make sure the renamed arg is in the expression it should be
-            @test occursin(string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1]))
+            @test occursin(
+                string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1])
+            )
         end
     end
-
 
     @testset "internals" begin
         @testset "name_of_type" begin
