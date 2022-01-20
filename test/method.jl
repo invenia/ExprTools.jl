@@ -326,4 +326,13 @@ struct TestCallableStruct end
             @test occursin(string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1]))
         end
     end
+
+
+    @testset "internals" begin
+        @testset "name_of_type" begin
+            # This isn't part of the public API, and isn't currently hit by anything that is
+            # but it really seems like it should work.
+            VERSION >= v"1.7" && @test ExprTools.name_of_type(Vararg) == :(Vararg{Any})
+        end
+    end
 end
