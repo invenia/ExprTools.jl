@@ -59,7 +59,8 @@ struct TestCallableStruct end
     end
 
     @testset "varadic Tuple" begin
-        @test_signature vt1(::Tuple{Vararg{Int64, N}}) where N = 2
+        @test_signature vt1(::Tuple{Vararg{Int64,N}}) where {N} = 2
+        VERSION >= v"1.7" && @test_signature vt2(::Tuple{Vararg{Int64}}) = 2
     end
 
     @testset "Scope Qualification" begin
@@ -131,21 +132,31 @@ struct TestCallableStruct end
     end
 
     @testset "vararg" begin
-        @test_signature f17(xs::Vararg{Any, N} where N) = 2
-
-        # `f17_alt(xs...) = 2` lowers to the same method as `f18`
-        # but has a different AST according to `splitdef` so we can't us @test_signature
-        f17_alt(xs...) = 2
-        test_matches(
-            signature(only_method(f17_alt)),
-            Dict(
-                :name => :f17_alt,
-                :args => [:(xs::(Vararg{Any, N} where N))]
+        if VERSION >= v"1.7"
+            @test_signature f17(xs::Vararg{Any}) = 2
+            # `f17_alt(xs...) = 2` lowers to the same method as `f17`
+            # but has a different AST according to `splitdef` so we can't us @test_signature
+            f17_alt(xs...) = 2
+            test_matches(
+                signature(only_method(f17_alt)),
+                Dict(:name => :f17_alt, :args => [:(xs::Vararg{Any})]),
             )
-        )
 
-        @test_signature f18(xs::Vararg{Int64, N} where N) = 2
-        @test_signature f19(x, xs::Vararg{Any, N} where N) = 2x
+            @test_signature f18(xs::Vararg{Int64}) = 2
+            @test_signature f19(x, xs::Vararg{Any}) = 2x
+        else
+            @test_signature f17b(xs::Vararg{Any,N} where {N}) = 2
+            # `f17b_alt(xs...) = 2` lowers to the same method as `f17b`
+            # but has a different AST according to `splitdef` so we can't us @test_signature
+            f17b_alt(xs...) = 2
+            test_matches(
+                signature(only_method(f17b_alt)),
+                Dict(:name => :f17b_alt, :args => [:(xs::(Vararg{Any,N} where {N}))]),
+            )
+
+            @test_signature f18b(xs::Vararg{Int64,N} where {N}) = 2
+            @test_signature f19b(x, xs::Vararg{Any,N} where {N}) = 2x
+        end
     end
 
     @testset "kwargs" begin
@@ -312,7 +323,17 @@ struct TestCallableStruct end
             @test length(no_hygiene[:whereparams]) == 1
             @test no_hygiene[:whereparams] != hygiene[:whereparams]  # different Symbols
             # very coarse test to make sure the renamed arg is in the expression it should be
-            @test occursin(string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1]))
+            @test occursin(
+                string(no_hygiene[:whereparams][1]), string(no_hygiene[:args][1])
+            )
+        end
+    end
+
+    @testset "internals" begin
+        @testset "name_of_type" begin
+            # This isn't part of the public API, and isn't currently hit by anything that is
+            # but it really seems like it should work.
+            VERSION >= v"1.7" && @test ExprTools.name_of_type(Vararg) == :(Vararg{Any})
         end
     end
 end

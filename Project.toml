@@ -1,7 +1,7 @@
 name = "ExprTools"
 uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
 authors = ["Invenia Technical Computing"]
-version = "0.1.7"
+version = "0.1.8"
 
 [compat]
 julia = "1"
