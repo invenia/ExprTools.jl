@@ -11,10 +11,10 @@ For `arg_exprs` being a list of positional argument expressions from a signature
 such as `[:(x::Int), :(y::Float64), :(z::Vararg)]`, or being a whole `signature_def` `Dict`
 containing a `signature_def[:args]` value of that form.
 
-This returns a tuple expresion containing all of the args by name. It correctly handles
+This returns a tuple expression containing all of the args by name. It correctly handles
 splatting for things that are `Vararg` typed, e.g for the prior example `:((x, y, z...))`
 
-This is useful for modifiying the `signature_def[:body]`.
+This is useful for modifying the `signature_def[:body]`.
 For example, one could printout all the arguments via
 
 ```julia
