@@ -247,12 +247,15 @@ function kwargs(m::Method)
     return names
 end
 
-function kwarg_names(m::Method)
-    mt = Base.get_methodtable(m)
-    !isdefined(mt, :kwsorter) && return []  # no kwsorter means no keywords for sure.
-    return Base.kwarg_decl(m, typeof(mt.kwsorter))
+if VERSION >= v"1.4-"
+    kwarg_names(m::Method) = Base.kwarg_decl(m)
+else
+    function kwarg_names(m::Method)
+        mt = Base.get_methodtable(m)
+        !isdefined(mt, :kwsorter) && return []  # no kwsorter means no keywords for sure.
+        return Base.kwarg_decl(m, typeof(mt.kwsorter))
+    end
 end
-
 
 
 """
