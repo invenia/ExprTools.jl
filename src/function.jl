@@ -11,6 +11,8 @@ Split a function definition expression into its various components including:
 - `:rtype`: Return type of the function
 - `:whereparams`: Where parameters
 - `:body`: Function body (not present for empty functions)
+- `:anonhead` : Expression head of the function definition for an assigned anonymous  
+  function. In this case, `head == `:(=)` and `anonhead` is either `:function` or `:(->)`.
 
 All components listed may not be present in the returned dictionary with the exception of
 `:head` which will always be present.
@@ -43,9 +45,16 @@ function splitdef(ex::Expr; throw::Bool=true)
         # empty function definition
         def[:name] = ex.args[1]
         return def
-    elseif length(ex.args) == 2  # Expect signature and body
-        def[:body] = ex.args[2]
-        ex = ex.args[1]  # Focus on the function signature
+    elseif length(ex.args) == 2  
+        if ex.head === :(=) && ex.args[1] isa Symbol # `ex` defines an assigned anonymous function
+            def[:name] = ex.args[1]         # name is on the left
+            anondef = splitdef(ex.args[2])  # parse RHS into `anondef` dictionary
+            def[:anonhead] = anondef[:head]
+            return merge(anondef, def)  # keys in `def` take precedence
+        else # Expect signature and body
+            def[:body] = ex.args[2]
+            ex = ex.args[1]  # Focus on the function signature
+        end
     else
         quan = length(ex.args) > 2 ? "too many" : "too few"
         return invalid_def("$quan of expression arguments for `$(repr(def[:head]))`")
@@ -158,6 +167,17 @@ function combinedef(def::Dict{Symbol,Any})
         nothing
     end
 
+    # Deal with assigned anonymous functions by recursively calling `combinedef` on a
+    # suitable dictionary `_def` created from `def`, without modifying the latter.
+    if haskey(def, :anonhead)
+        _def = copy(def)
+        _def[:head] = def[:anonhead]    # head of RHS anonymous function is `def[:anonhead]`
+        delete!(_def, :anonhead)        # make sure, there is no endless recursion
+        delete!(_def, :name)            # anonymous functions also do not have a name
+        sig = combinedef(_def)          # call `combinedef` for the RHS
+        return Expr(head, name, sig)    # early return, we only have to equate LHS and RHS
+    end
+    
     # Empty generic function definitions must not contain additional keys
     empty_extras = (:args, :kwargs, :rtype, :whereparams)
     if !haskey(def, :body) && any(k -> haskey(def, k), empty_extras)
