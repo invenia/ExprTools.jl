@@ -483,12 +483,24 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
     @testset "block expression ($(function_form(short)) anonymous function)" for short in (true, false)
         @testset "(;)" begin
             # The `(;)` syntax was deprecated in 1.4.0-DEV.585 (ce29ec547e) but we can still
-            # test the behavior with `begin end`.
-            f, expr = if short
-                @audit (begin end) -> nothing
+            # test the behavior with an explicit Expr
+            expr = if short
+                # `(;) -> nothing`
+                Expr(
+                    :->,
+                    Expr(:block),
+                    Expr(:block, LineNumberNode(@__LINE__, @__FILE__), :nothing),
+                )
             else
-                @audit function (begin end) nothing end
+                # `function (;) nothing end`
+                Expr(
+                    :function,
+                    Expr(:block),
+                    Expr(:block, LineNumberNode(@__LINE__, @__FILE__), :nothing),
+                )
             end
+            f = eval(expr)
+
             @test length(methods(f)) == 1
             @test f() === nothing
 
@@ -788,8 +800,16 @@ function_form(short::Bool) = string(short ? "short" : "long", "-form")
 
     @testset "return-type (long-form anonymous function)" begin
         @testset "(x)::Integer" begin
-            # Interpreted as `function (x::Integer); x end`
-            f, expr = @audit function (x)::Integer; x end
+            # Older parsers interpret
+            #   `function (x)::Integer; x end`
+            # as 
+            #   `function (x::Integer); x end`
+            expr = Expr(
+                :function,
+                Expr(:tuple, Expr(:(::), :x, :Integer)),
+                Expr(:block, LineNumberNode(@__LINE__, @__FILE__), :x),
+            )
+            f = eval(expr)
             @test length(methods(f)) == 1
             @test f(0) == 0
             @test_throws MethodError f(0.0)
