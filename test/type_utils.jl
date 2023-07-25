@@ -65,8 +65,8 @@
 
         # https://github.com/invenia/ExprTools.jl/issues/39
         @testset "#39" begin
-            s = Tuple{Type{T}, T} where {T<:Number}
+            s = Tuple{Type{T},T} where {T<:Number}
             @test parameters(s) isa Core.SimpleVector # what test to write here?
         end
-    end     
+    end
 end
