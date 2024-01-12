@@ -8,8 +8,6 @@
 ExprTools provides tooling for working with Julia expressions during [metaprogramming](https://docs.julialang.org/en/v1/manual/metaprogramming/).
 This package aims to provide light-weight performant tooling without requiring additional package dependencies.
 
-Alternatively see the [MacroTools](https://github.com/MikeInnes/MacroTools.jl) package for a more powerful set of tools.
-
 Currently, this package provides the `splitdef`, `signature` and `combinedef` functions which are useful for inspecting and manipulating function definition expressions.
  - `splitdef` works on a function definition expression and returns a `Dict` of its parts.
  - `combinedef` takes a `Dict` from `splitdef` and builds it into an expression.
@@ -71,6 +69,6 @@ Dict{Symbol, Any} with 3 entries:
 ```
 
 ### JuliaCon 2021 Video
-"ExprTools: Metaprogramming from reflection" by Lyndon White
+"ExprTools: Metaprogramming from reflection" by Frames White
 
 [![YouTube Video](https://img.youtube.com/vi/CREWoLxpDMo/0.jpg)](https://www.youtube.com/watch?v=CREWoLxpDMo)
